@@ -145,133 +145,159 @@ export default function LandingPage() {
           </p>
         </motion.div>
 
-        {/* Bento Grid - Responsive stacking */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="container-bento-grid">
-          {/* Large card - Capture */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="relative sm:col-span-2 lg:row-span-2 rounded-3xl bg-gradient-to-br from-accent/20 to-accent/5 border border-border/50 p-8 hover-elevate overflow-hidden"
-            data-testid="card-capture"
-          >
-            <CaptureIllustration />
-            <div className="relative z-10 mt-4">
-              <div className="w-14 h-14 rounded-2xl bg-accent/20 flex items-center justify-center mb-6">
-                <Zap className="w-7 h-7 text-accent" />
+        {/* Bento Grid - Large showcase cards with external descriptions */}
+        <div className="space-y-16" data-testid="container-bento-grid">
+          {/* Row 1: Capture (large) + AI Analysis */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Capture Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col gap-6"
+              data-testid="card-capture"
+            >
+              <div className="relative aspect-[4/3] rounded-3xl bg-gradient-to-br from-accent/20 to-accent/5 border border-border/50 p-8 hover-elevate overflow-hidden flex items-center justify-center">
+                <CaptureIllustration />
               </div>
-              <h3 className="font-serif text-3xl mb-3">Capture Anything</h3>
-              <p className="text-muted-foreground text-lg max-w-sm">
-                Save URLs with one click, batch import bookmarks, or upload files. 
-                Eden accepts it all.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* AI Analysis */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate overflow-hidden"
-            data-testid="card-ai-analysis"
-          >
-            <AIAnalysisIllustration />
-            <div className="relative z-10">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                <Brain className="w-6 h-6 text-primary" />
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center shrink-0">
+                  <Zap className="w-6 h-6 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-2xl mb-2">Capture Anything</h3>
+                  <p className="text-muted-foreground">
+                    Save URLs with one click, batch import bookmarks, or upload files. Eden accepts it all.
+                  </p>
+                </div>
               </div>
-              <h3 className="font-serif text-xl mb-2">AI Analysis</h3>
-              <p className="text-muted-foreground text-sm">
-                Automatic summaries, tags, and concept extraction
-              </p>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* Connections */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate overflow-hidden"
-            data-testid="card-connections"
-          >
-            <ConnectionsIllustration />
-            <div className="relative z-10">
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
-                <Network className="w-6 h-6 text-accent" />
+            {/* AI Analysis Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="flex flex-col gap-6"
+              data-testid="card-ai-analysis"
+            >
+              <div className="relative aspect-[4/3] rounded-3xl bg-gradient-to-br from-primary/15 to-primary/5 border border-border/50 p-8 hover-elevate overflow-hidden flex items-center justify-center">
+                <AIAnalysisIllustration />
               </div>
-              <h3 className="font-serif text-xl mb-2">Smart Connections</h3>
-              <p className="text-muted-foreground text-sm">
-                Discover hidden links between your saved content
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Collections */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate overflow-hidden"
-            data-testid="card-collections"
-          >
-            <CollectionsIllustration />
-            <div className="relative z-10">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                <Layers className="w-6 h-6 text-primary" />
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Brain className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-2xl mb-2">AI Analysis</h3>
+                  <p className="text-muted-foreground">
+                    Automatic summaries, smart tags, and concept extraction. Your content, understood.
+                  </p>
+                </div>
               </div>
-              <h3 className="font-serif text-xl mb-2">Auto Collections</h3>
-              <p className="text-muted-foreground text-sm">
-                Content organizes itself into smart collections
-              </p>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
 
-          {/* Search */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate overflow-hidden"
-            data-testid="card-search"
-          >
-            <SearchIllustration />
-            <div className="relative z-10">
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
-                <Search className="w-6 h-6 text-accent" />
+          {/* Row 2: Connections + Collections + Search (3 columns) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Connections Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex flex-col gap-5"
+              data-testid="card-connections"
+            >
+              <div className="relative aspect-square rounded-3xl bg-gradient-to-br from-accent/15 to-accent/5 border border-border/50 p-6 hover-elevate overflow-hidden flex items-center justify-center">
+                <ConnectionsIllustration />
               </div>
-              <h3 className="font-serif text-xl mb-2">Semantic Search</h3>
-              <p className="text-muted-foreground text-sm">
-                Find anything by meaning, not just keywords
-              </p>
-            </div>
-          </motion.div>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <Network className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl mb-1">Smart Connections</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Discover hidden links between your saved content automatically.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
 
-          {/* Large card - Knowledge Graph */}
+            {/* Collections Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-col gap-5"
+              data-testid="card-collections"
+            >
+              <div className="relative aspect-square rounded-3xl bg-gradient-to-br from-primary/15 to-primary/5 border border-border/50 p-6 hover-elevate overflow-hidden flex items-center justify-center">
+                <CollectionsIllustration />
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Layers className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl mb-1">Auto Collections</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Content organizes itself into smart, themed collections.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Search Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="flex flex-col gap-5"
+              data-testid="card-search"
+            >
+              <div className="relative aspect-square rounded-3xl bg-gradient-to-br from-accent/15 to-accent/5 border border-border/50 p-6 hover-elevate overflow-hidden flex items-center justify-center">
+                <SearchIllustration />
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <Search className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl mb-1">Semantic Search</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Find anything by meaning, not just keywords.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Row 3: Knowledge Graph (full width showcase) */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="relative sm:col-span-2 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 p-8 hover-elevate overflow-hidden"
+            className="flex flex-col lg:flex-row gap-8 items-center"
             data-testid="card-knowledge-graph"
           >
-            <div className="flex flex-col md:flex-row gap-6 items-center">
-              <div className="relative z-10 flex-1">
-                <h3 className="font-serif text-2xl mb-2">Knowledge Graph</h3>
-                <p className="text-muted-foreground max-w-md">
-                  Visualize how your ideas connect. Watch clusters emerge as you save more content.
-                </p>
-              </div>
-              <div className="flex-1 w-full">
-                <KnowledgeGraphIllustration />
-              </div>
+            <div className="relative flex-1 w-full aspect-[16/9] lg:aspect-[2/1] rounded-3xl bg-gradient-to-br from-primary/10 to-accent/5 border border-border/50 p-8 hover-elevate overflow-hidden flex items-center justify-center">
+              <KnowledgeGraphIllustration />
+            </div>
+            <div className="lg:w-80 shrink-0">
+              <h3 className="font-serif text-3xl mb-3">Knowledge Graph</h3>
+              <p className="text-muted-foreground text-lg mb-4">
+                Visualize how your ideas connect. Watch clusters emerge as you save more content.
+              </p>
+              <p className="text-muted-foreground/70 text-sm">
+                The more you save, the smarter it gets. Eden maps relationships between concepts, people, and ideas across everything you capture.
+              </p>
             </div>
           </motion.div>
         </div>

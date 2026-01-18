@@ -2,51 +2,52 @@ import { motion } from "framer-motion";
 
 export function CaptureIllustration() {
   const cards = [
-    { x: 20, y: 10, rotation: -8, delay: 0, colorVar: "--accent" },
-    { x: 50, y: 25, rotation: 5, delay: 0.2, colorVar: "--primary" },
-    { x: 30, y: 45, rotation: -3, delay: 0.4, colorVar: "--accent" },
+    { x: 10, y: 5, rotation: -12, delay: 0, colorVar: "--accent" },
+    { x: 55, y: 15, rotation: 8, delay: 0.3, colorVar: "--primary" },
+    { x: 25, y: 35, rotation: -5, delay: 0.6, colorVar: "--accent" },
+    { x: 65, y: 50, rotation: 10, delay: 0.9, colorVar: "--primary" },
   ];
 
   return (
-    <div className="relative w-full h-48 overflow-hidden">
+    <div className="relative w-full h-full min-h-[200px] overflow-hidden">
       {cards.map((card, i) => (
         <motion.div
           key={i}
-          className="absolute w-24 h-16 rounded-lg border border-border/50 backdrop-blur-sm"
+          className="absolute w-32 h-20 rounded-xl border border-border/50 backdrop-blur-sm"
           style={{
             left: `${card.x}%`,
             top: `${card.y}%`,
-            background: `linear-gradient(135deg, hsl(var(${card.colorVar}) / 0.2), hsl(var(${card.colorVar}) / 0.05))`,
+            background: `linear-gradient(135deg, hsl(var(${card.colorVar}) / 0.25), hsl(var(${card.colorVar}) / 0.08))`,
           }}
-          initial={{ opacity: 0, y: 40, rotate: card.rotation }}
+          initial={{ opacity: 0, y: 60, rotate: card.rotation }}
           animate={{ 
             opacity: [0, 1, 1, 0],
-            y: [40, 0, -10, -40],
+            y: [60, 0, -15, -60],
             rotate: card.rotation,
           }}
           transition={{
-            duration: 3,
+            duration: 4,
             delay: card.delay,
             repeat: Infinity,
             ease: "easeInOut",
           }}
         >
-          <div className="p-2">
-            <div className="w-full h-2 rounded bg-foreground/10 mb-1.5" />
-            <div className="w-3/4 h-2 rounded bg-foreground/10" />
+          <div className="p-3">
+            <div className="w-full h-2.5 rounded bg-foreground/15 mb-2" />
+            <div className="w-3/4 h-2.5 rounded bg-foreground/10" />
           </div>
         </motion.div>
       ))}
       
       <motion.div
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-2xl bg-accent/20 border border-accent/30 flex items-center justify-center"
-        animate={{ scale: [1, 1.05, 1] }}
-        transition={{ duration: 2, repeat: Infinity }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 w-20 h-20 rounded-2xl bg-accent/25 border border-accent/40 flex items-center justify-center"
+        animate={{ scale: [1, 1.08, 1] }}
+        transition={{ duration: 2.5, repeat: Infinity }}
       >
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 rounded-lg border-2 border-dashed border-accent/50"
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className="w-10 h-10 rounded-lg border-2 border-dashed border-accent/60"
         />
       </motion.div>
     </div>
@@ -55,11 +56,13 @@ export function CaptureIllustration() {
 
 export function AIAnalysisIllustration() {
   const neurons = [
-    { cx: 25, cy: 20, r: 6 },
-    { cx: 75, cy: 25, r: 5 },
-    { cx: 50, cy: 50, r: 8 },
-    { cx: 20, cy: 70, r: 5 },
-    { cx: 80, cy: 75, r: 6 },
+    { cx: 20, cy: 15, r: 8 },
+    { cx: 80, cy: 20, r: 7 },
+    { cx: 50, cy: 50, r: 12 },
+    { cx: 15, cy: 75, r: 7 },
+    { cx: 85, cy: 80, r: 8 },
+    { cx: 35, cy: 30, r: 5 },
+    { cx: 65, cy: 70, r: 6 },
   ];
   
   const connections = [
@@ -69,10 +72,14 @@ export function AIAnalysisIllustration() {
     { from: 2, to: 4 },
     { from: 0, to: 3 },
     { from: 1, to: 4 },
+    { from: 5, to: 2 },
+    { from: 6, to: 2 },
+    { from: 0, to: 5 },
+    { from: 4, to: 6 },
   ];
 
   return (
-    <div className="relative w-full h-32">
+    <div className="relative w-full h-full min-h-[200px]">
       <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
         {connections.map((conn, i) => (
           <motion.line
@@ -121,17 +128,20 @@ export function AIAnalysisIllustration() {
 
 export function ConnectionsIllustration() {
   const nodes = [
-    { cx: 15, cy: 30, color: "accent" },
-    { cx: 40, cy: 15, color: "primary" },
-    { cx: 70, cy: 25, color: "accent" },
-    { cx: 30, cy: 55, color: "primary" },
-    { cx: 60, cy: 60, color: "accent" },
-    { cx: 85, cy: 50, color: "primary" },
-    { cx: 50, cy: 85, color: "accent" },
+    { cx: 12, cy: 25, color: "accent" },
+    { cx: 35, cy: 12, color: "primary" },
+    { cx: 70, cy: 18, color: "accent" },
+    { cx: 88, cy: 35, color: "primary" },
+    { cx: 25, cy: 50, color: "accent" },
+    { cx: 55, cy: 45, color: "primary" },
+    { cx: 80, cy: 60, color: "accent" },
+    { cx: 15, cy: 78, color: "primary" },
+    { cx: 45, cy: 75, color: "accent" },
+    { cx: 75, cy: 85, color: "primary" },
   ];
 
   return (
-    <div className="relative w-full h-32">
+    <div className="relative w-full h-full min-h-[180px]">
       <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
         {nodes.map((node, i) =>
           nodes.slice(i + 1).map((target, j) => {
@@ -191,34 +201,35 @@ export function ConnectionsIllustration() {
 
 export function CollectionsIllustration() {
   const folders = [
-    { x: 10, color: "accent", delay: 0 },
-    { x: 38, color: "primary", delay: 0.15 },
-    { x: 66, color: "accent", delay: 0.3 },
+    { x: 8, color: "accent", delay: 0 },
+    { x: 36, color: "primary", delay: 0.2 },
+    { x: 64, color: "accent", delay: 0.4 },
   ];
 
   const floatingItems = [
-    { x: 25, delay: 0, targetFolder: 0 },
-    { x: 50, delay: 0.5, targetFolder: 1 },
-    { x: 75, delay: 1, targetFolder: 2 },
+    { x: 20, delay: 0, targetFolder: 0 },
+    { x: 48, delay: 0.6, targetFolder: 1 },
+    { x: 76, delay: 1.2, targetFolder: 2 },
+    { x: 35, delay: 1.8, targetFolder: 1 },
   ];
 
   return (
-    <div className="relative w-full h-32 overflow-hidden">
+    <div className="relative w-full h-full min-h-[180px] overflow-hidden">
       {folders.map((folder, i) => (
         <motion.div
           key={i}
-          className="absolute bottom-2 w-[26%] h-12 rounded-lg border"
+          className="absolute bottom-4 w-[28%] h-16 rounded-xl border"
           style={{
             left: `${folder.x}%`,
-            background: `linear-gradient(to top, hsl(var(--${folder.color}) / 0.15), transparent)`,
-            borderColor: `hsl(var(--${folder.color}) / 0.3)`,
+            background: `linear-gradient(to top, hsl(var(--${folder.color}) / 0.2), transparent)`,
+            borderColor: `hsl(var(--${folder.color}) / 0.35)`,
           }}
-          animate={{ y: [0, -2, 0] }}
-          transition={{ duration: 2, delay: folder.delay, repeat: Infinity }}
+          animate={{ y: [0, -4, 0] }}
+          transition={{ duration: 2.5, delay: folder.delay, repeat: Infinity }}
         >
           <div
-            className="absolute -top-2 left-0 w-8 h-3 rounded-t-md"
-            style={{ background: `hsl(var(--${folder.color}) / 0.3)` }}
+            className="absolute -top-3 left-0 w-10 h-4 rounded-t-lg"
+            style={{ background: `hsl(var(--${folder.color}) / 0.35)` }}
           />
         </motion.div>
       ))}
@@ -226,19 +237,19 @@ export function CollectionsIllustration() {
       {floatingItems.map((item, i) => (
         <motion.div
           key={i}
-          className="absolute w-6 h-4 rounded bg-foreground/20 border border-foreground/10"
+          className="absolute w-8 h-6 rounded-lg bg-foreground/20 border border-foreground/15"
           style={{ left: `${item.x}%` }}
           initial={{ top: "-10%", opacity: 0 }}
           animate={{
-            top: ["0%", "60%"],
+            top: ["0%", "55%"],
             opacity: [0, 1, 1, 0],
-            x: [(item.targetFolder - 1) * 5, 0],
+            x: [(item.targetFolder - 1) * 8, 0],
           }}
           transition={{
-            duration: 2.5,
+            duration: 3,
             delay: item.delay,
             repeat: Infinity,
-            repeatDelay: 1,
+            repeatDelay: 0.5,
           }}
         />
       ))}
@@ -248,47 +259,47 @@ export function CollectionsIllustration() {
 
 export function SearchIllustration() {
   return (
-    <div className="relative w-full h-32 flex items-center justify-center">
+    <div className="relative w-full h-full min-h-[180px] flex items-center justify-center">
       <motion.div
-        className="absolute w-20 h-20 rounded-full border border-accent/20"
-        animate={{ scale: [1, 2, 2], opacity: [0.5, 0, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
+        className="absolute w-28 h-28 rounded-full border-2 border-accent/25"
+        animate={{ scale: [1, 2.5, 2.5], opacity: [0.6, 0, 0] }}
+        transition={{ duration: 2.5, repeat: Infinity }}
       />
       <motion.div
-        className="absolute w-20 h-20 rounded-full border border-accent/20"
-        animate={{ scale: [1, 2, 2], opacity: [0.5, 0, 0] }}
-        transition={{ duration: 2, delay: 0.5, repeat: Infinity }}
+        className="absolute w-28 h-28 rounded-full border-2 border-accent/25"
+        animate={{ scale: [1, 2.5, 2.5], opacity: [0.6, 0, 0] }}
+        transition={{ duration: 2.5, delay: 0.6, repeat: Infinity }}
       />
       <motion.div
-        className="absolute w-20 h-20 rounded-full border border-accent/20"
-        animate={{ scale: [1, 2, 2], opacity: [0.5, 0, 0] }}
-        transition={{ duration: 2, delay: 1, repeat: Infinity }}
+        className="absolute w-28 h-28 rounded-full border-2 border-accent/25"
+        animate={{ scale: [1, 2.5, 2.5], opacity: [0.6, 0, 0] }}
+        transition={{ duration: 2.5, delay: 1.2, repeat: Infinity }}
       />
       
       <motion.div
-        className="relative z-10 w-10 h-10 rounded-full bg-accent/20 border-2 border-accent/40 flex items-center justify-center"
-        animate={{ scale: [1, 1.05, 1] }}
-        transition={{ duration: 1, repeat: Infinity }}
+        className="relative z-10 w-14 h-14 rounded-full bg-accent/25 border-2 border-accent/50 flex items-center justify-center"
+        animate={{ scale: [1, 1.08, 1] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
       >
         <motion.div
-          className="absolute w-3 h-0.5 bg-accent/60 rounded-full"
-          style={{ right: "-8px", bottom: "2px", rotate: "45deg" }}
+          className="absolute w-4 h-1 bg-accent/70 rounded-full"
+          style={{ right: "-12px", bottom: "4px", rotate: "45deg" }}
         />
       </motion.div>
       
-      {[0, 1, 2].map((i) => (
+      {[0, 1, 2, 3, 4].map((i) => (
         <motion.div
           key={i}
-          className="absolute w-2 h-2 rounded-full bg-primary/60"
+          className="absolute w-3 h-3 rounded-full bg-primary/70"
           style={{
-            left: `${30 + i * 20}%`,
-            top: `${25 + (i % 2) * 30}%`,
+            left: `${20 + i * 15}%`,
+            top: `${20 + (i % 3) * 25}%`,
           }}
           initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
+          animate={{ opacity: [0, 1, 0], scale: [0, 1.2, 0] }}
           transition={{
-            duration: 2,
-            delay: 0.8 + i * 0.3,
+            duration: 2.5,
+            delay: 0.6 + i * 0.25,
             repeat: Infinity,
           }}
         />
@@ -299,24 +310,28 @@ export function SearchIllustration() {
 
 export function KnowledgeGraphIllustration() {
   const nodes = [
-    { cx: 50, cy: 50, r: 10, color: "primary", label: "" },
-    { cx: 25, cy: 30, r: 6, color: "accent", label: "" },
-    { cx: 75, cy: 25, r: 7, color: "accent", label: "" },
-    { cx: 20, cy: 65, r: 5, color: "primary", label: "" },
-    { cx: 80, cy: 60, r: 6, color: "accent", label: "" },
-    { cx: 45, cy: 80, r: 5, color: "primary", label: "" },
-    { cx: 65, cy: 75, r: 4, color: "accent", label: "" },
-    { cx: 35, cy: 45, r: 4, color: "accent", label: "" },
-    { cx: 65, cy: 40, r: 5, color: "primary", label: "" },
+    { cx: 50, cy: 50, r: 14, color: "primary" },
+    { cx: 18, cy: 25, r: 8, color: "accent" },
+    { cx: 82, cy: 20, r: 9, color: "accent" },
+    { cx: 12, cy: 60, r: 7, color: "primary" },
+    { cx: 88, cy: 55, r: 8, color: "accent" },
+    { cx: 35, cy: 85, r: 7, color: "primary" },
+    { cx: 70, cy: 82, r: 6, color: "accent" },
+    { cx: 30, cy: 40, r: 6, color: "accent" },
+    { cx: 70, cy: 35, r: 7, color: "primary" },
+    { cx: 50, cy: 18, r: 5, color: "accent" },
+    { cx: 25, cy: 70, r: 5, color: "primary" },
+    { cx: 75, cy: 70, r: 5, color: "accent" },
   ];
 
   const edges = [
-    [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], [0, 8],
-    [1, 3], [2, 4], [5, 6], [7, 1], [8, 2], [3, 5], [4, 6],
+    [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7], [0, 8], [0, 9],
+    [1, 3], [2, 4], [5, 6], [7, 1], [8, 2], [3, 5], [4, 6], [9, 1], [9, 2],
+    [10, 3], [10, 5], [11, 4], [11, 6], [7, 10], [8, 11],
   ];
 
   return (
-    <div className="relative w-full h-40">
+    <div className="relative w-full h-full min-h-[200px]">
       <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
         <defs>
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
