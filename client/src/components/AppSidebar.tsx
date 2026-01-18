@@ -13,6 +13,7 @@ import {
   Settings,
   Upload,
   FileUp,
+  Bookmark,
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,6 +35,7 @@ const mainNavItems = [
   { title: "Search", url: "/search", icon: Search },
   { title: "Collections", url: "/collections", icon: FolderOpen },
   { title: "Graph", url: "/graph", icon: Network },
+  { title: "Bookmarklet", url: "/bookmarklet", icon: Bookmark },
 ];
 
 const filterItems = [

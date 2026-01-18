@@ -279,6 +279,91 @@ export async function registerRoutes(
     }
   });
 
+  // Bookmarklet endpoint - accepts GET for cross-origin compatibility
+  app.get("/api/bookmarklet/save", async (req: Request, res: Response) => {
+    const url = req.query.url as string;
+    const title = req.query.title as string;
+    const callback = req.query.callback as string;
+
+    // JSONP callback for cross-origin
+    if (callback) {
+      // Validate callback is a safe JavaScript identifier to prevent XSS
+      const safeCallbackRegex = /^[_$a-zA-Z][_$0-9a-zA-Z]*$/;
+      if (!safeCallbackRegex.test(callback)) {
+        res.status(400).send("Invalid callback parameter");
+        return;
+      }
+
+      res.setHeader("Content-Type", "application/javascript");
+      
+      if (!url || !url.startsWith("http")) {
+        res.send(`${callback}(${JSON.stringify({ success: false, error: "Invalid URL" })})`);
+        return;
+      }
+
+      try {
+        const parseResult = insertSavedItemSchema.safeParse({ url });
+        if (!parseResult.success) {
+          res.send(`${callback}(${JSON.stringify({ success: false, error: "Invalid URL format" })})`);
+          return;
+        }
+
+        const extracted = await extractContentFromUrl(url);
+        const analysis = await analyzeContentWithAI(extracted.content, title || extracted.title);
+
+        const enrichedData = {
+          title: title || extracted.title,
+          content: extracted.content,
+          summary: analysis.summary,
+          tags: analysis.tags,
+          concepts: analysis.concepts,
+          domain: extracted.domain,
+          favicon: extracted.favicon,
+          imageUrl: extracted.imageUrl,
+          expiresAt: null,
+        };
+
+        const newItem = await storage.createItem(parseResult.data, enrichedData);
+
+        // Find connections async (don't block response)
+        storage.getAllItems().then(async (existingItems) => {
+          if (existingItems.length > 1) {
+            const connectionResult = await findConnectionsWithAI(
+              { title: newItem.title, summary: newItem.summary, tags: newItem.tags, concepts: newItem.concepts },
+              existingItems.filter(i => i.id !== newItem.id).slice(0, 10).map((item) => ({
+                id: item.id,
+                title: item.title,
+                summary: item.summary,
+                tags: item.tags,
+                concepts: item.concepts,
+              }))
+            );
+            if (connectionResult.connections.length > 0) {
+              await storage.updateItem(newItem.id, { 
+                connections: connectionResult.connections,
+                connectionReasons: connectionResult.reasons,
+              });
+            }
+          }
+        }).catch(() => {});
+
+        res.send(`${callback}(${JSON.stringify({ 
+          success: true, 
+          item: { id: newItem.id, title: newItem.title, summary: newItem.summary }
+        })})`);
+      } catch (error) {
+        res.send(`${callback}(${JSON.stringify({ 
+          success: false, 
+          error: error instanceof Error ? error.message : "Failed to save" 
+        })})`);
+      }
+      return;
+    }
+
+    // Regular redirect response
+    res.redirect(`/?saved=${encodeURIComponent(url || "")}`);
+  });
+
   app.post("/api/items/capture", async (req: Request, res: Response) => {
     try {
       const parseResult = insertSavedItemSchema.safeParse(req.body);

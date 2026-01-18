@@ -20,6 +20,7 @@ import SearchPage from "@/pages/search";
 import CollectionsPage from "@/pages/collections";
 import GraphPage from "@/pages/graph";
 import SettingsPage from "@/pages/settings";
+import BookmarkletPage from "@/pages/bookmarklet";
 
 function Router() {
   return (
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/collections" component={CollectionsPage} />
       <Route path="/graph" component={GraphPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/bookmarklet" component={BookmarkletPage} />
       <Route component={NotFound} />
     </Switch>
   );
