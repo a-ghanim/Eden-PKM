@@ -611,6 +611,58 @@ export async function registerRoutes(
     }
   });
 
+  // Enrichment endpoint - AI-suggested external resources
+  app.post("/api/enrichment", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { title, summary, tags, concepts } = req.body;
+      
+      if (!title || !summary) {
+        return res.status(400).json({ error: "Title and summary are required" });
+      }
+
+      const anthropic = new Anthropic();
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-5-20250514",
+        max_tokens: 1024,
+        messages: [{
+          role: "user",
+          content: `Based on this saved article, suggest 3-5 high-quality external resources that would enrich the reader's understanding. These should be real, authoritative sources.
+
+Article Title: ${title}
+Summary: ${summary}
+Tags: ${tags?.join(", ") || "none"}
+Key Concepts: ${concepts?.join(", ") || "none"}
+
+Return a JSON array of enrichment suggestions. Each suggestion should have:
+- title: A descriptive title for the resource
+- description: Brief description of what they'll learn (1-2 sentences)
+- type: One of "article", "video", "book", "course", "tool", "research"
+- source: The authoritative source/publication name
+
+Example format:
+[{"title":"Deep Work by Cal Newport","description":"Explores focused productivity and minimizing distractions in knowledge work.","type":"book","source":"Penguin Random House"}]
+
+Return ONLY the JSON array, no other text.`
+        }]
+      });
+
+      const content = response.content[0];
+      if (content.type !== "text") {
+        return res.json({ suggestions: [] });
+      }
+
+      try {
+        const suggestions = JSON.parse(content.text);
+        res.json({ suggestions: Array.isArray(suggestions) ? suggestions : [] });
+      } catch {
+        res.json({ suggestions: [] });
+      }
+    } catch (error) {
+      console.error("Enrichment error:", error);
+      res.status(500).json({ error: "Failed to generate enrichment suggestions" });
+    }
+  });
+
   app.post("/api/items/batch/stream", isAuthenticated, async (req: any, res: Response) => {
     const userId = req.user.claims.sub;
     res.setHeader("Content-Type", "text/event-stream");

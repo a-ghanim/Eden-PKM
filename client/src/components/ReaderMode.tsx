@@ -1,14 +1,89 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ExternalLink, Clock, BookmarkPlus, Share2, Highlighter, MessageSquare } from "lucide-react";
+import { X, ExternalLink, Clock, BookmarkPlus, Share2, Highlighter, MessageSquare, BookOpen, Video, GraduationCap, Wrench, FileText, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEden } from "@/lib/store";
 import { SavedItemCard } from "./SavedItemCard";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+
+interface EnrichmentSuggestion {
+  title: string;
+  description: string;
+  type: "article" | "video" | "book" | "course" | "tool" | "research";
+  source: string;
+}
+
+function EnrichmentCard({ suggestion }: { suggestion: EnrichmentSuggestion }) {
+  const getIcon = () => {
+    switch (suggestion.type) {
+      case "book": return <BookOpen className="w-4 h-4" />;
+      case "video": return <Video className="w-4 h-4" />;
+      case "course": return <GraduationCap className="w-4 h-4" />;
+      case "tool": return <Wrench className="w-4 h-4" />;
+      case "research": return <FileText className="w-4 h-4" />;
+      default: return <FileText className="w-4 h-4" />;
+    }
+  };
+
+  const getTypeColor = () => {
+    switch (suggestion.type) {
+      case "book": return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
+      case "video": return "bg-red-500/10 text-red-600 dark:text-red-400";
+      case "course": return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
+      case "tool": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+      case "research": return "bg-purple-500/10 text-purple-600 dark:text-purple-400";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="group p-4 rounded-xl border border-border/50 hover:border-border hover:bg-muted/30 transition-all duration-200 cursor-pointer"
+      data-testid={`enrichment-card-${suggestion.title.slice(0, 20).replace(/\s+/g, "-").toLowerCase()}`}
+    >
+      <div className="flex items-start gap-3">
+        <div className={`p-2 rounded-lg ${getTypeColor()}`}>
+          {getIcon()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="font-medium text-sm leading-tight mb-1">{suggestion.title}</h4>
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{suggestion.description}</p>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+              {suggestion.type}
+            </Badge>
+            <span className="text-[10px] text-muted-foreground">{suggestion.source}</span>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export function ReaderMode() {
   const { selectedItem, setSelectedItem, items, updateItem } = useEden();
+
+  const { data: enrichmentData, isLoading: isLoadingEnrichment } = useQuery({
+    queryKey: ["/api/enrichment", selectedItem?.id],
+    queryFn: async () => {
+      if (!selectedItem) return { suggestions: [] };
+      const response = await apiRequest("POST", "/api/enrichment", {
+        title: selectedItem.title,
+        summary: selectedItem.summary,
+        tags: selectedItem.tags,
+        concepts: selectedItem.concepts,
+      });
+      return response.json();
+    },
+    enabled: !!selectedItem,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
 
   if (!selectedItem) return null;
 
@@ -50,6 +125,8 @@ export function ReaderMode() {
   const handleMarkRead = () => {
     updateItem(selectedItem.id, { isRead: true, readingProgress: 100 });
   };
+
+  const enrichmentSuggestions: EnrichmentSuggestion[] = enrichmentData?.suggestions || [];
 
   return (
     <AnimatePresence>
@@ -168,13 +245,51 @@ export function ReaderMode() {
                 </motion.div>
               </article>
 
+              {/* Enrichment Section - External Resources */}
               <motion.section
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
                 className="mt-8"
               >
-                <h2 className="text-lg font-semibold mb-4">Related in Eden</h2>
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <h2 className="text-lg font-semibold">Enrichment</h2>
+                </div>
+                {isLoadingEnrichment ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="p-4 rounded-xl border border-border/50">
+                        <div className="flex items-start gap-3">
+                          <Skeleton className="w-8 h-8 rounded-lg" />
+                          <div className="flex-1">
+                            <Skeleton className="h-4 w-3/4 mb-2" />
+                            <Skeleton className="h-3 w-full mb-2" />
+                            <Skeleton className="h-3 w-1/3" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : enrichmentSuggestions.length > 0 ? (
+                  <div className="space-y-3">
+                    {enrichmentSuggestions.map((suggestion, index) => (
+                      <EnrichmentCard key={index} suggestion={suggestion} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No enrichment suggestions available</p>
+                )}
+              </motion.section>
+
+              {/* Eden Items Section */}
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="mt-8"
+              >
+                <h2 className="text-lg font-semibold mb-4">In Your Eden</h2>
                 {relatedItems.length > 0 ? (
                   <div className="space-y-2">
                     {relatedItems.map((item) => (
@@ -182,7 +297,7 @@ export function ReaderMode() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No related items found</p>
+                  <p className="text-sm text-muted-foreground">No related items in your collection</p>
                 )}
               </motion.section>
             </div>
