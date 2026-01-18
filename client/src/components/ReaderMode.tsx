@@ -164,21 +164,23 @@ export function ReaderMode() {
                 </motion.div>
               </article>
 
-              {relatedItems.length > 0 && (
-                <motion.section
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="mt-8"
-                >
-                  <h2 className="text-lg font-semibold mb-4">Related in Eden</h2>
-                  <div className="space-y-3">
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mt-8"
+              >
+                <h2 className="text-lg font-semibold mb-4">Related in Eden</h2>
+                {relatedItems.length > 0 ? (
+                  <div className="space-y-2">
                     {relatedItems.map((item) => (
                       <SavedItemCard key={item.id} item={item} variant="compact" />
                     ))}
                   </div>
-                </motion.section>
-              )}
+                ) : (
+                  <p className="text-sm text-muted-foreground">No related items found</p>
+                )}
+              </motion.section>
             </div>
           </ScrollArea>
 
