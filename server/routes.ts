@@ -129,7 +129,7 @@ async function extractContentFromUrl(url: string): Promise<{ title: string; cont
     const favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
     
     return {
-      title: `Content from ${domain}`,
+      title: domain,
       content: `This is captured content from ${url}. In a production environment, we would fetch and parse the actual webpage content here.`,
       domain,
       favicon,
