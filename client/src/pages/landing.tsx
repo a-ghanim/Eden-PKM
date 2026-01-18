@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { ArrowRight, Sparkles, Network, Brain, Zap, Layers, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import heroImage from "@assets/blade-lustre-RLUrtznJ4EU-unsplash_1768744151563.jpg";
 
 /**
  * Midjourney Prompt for Hero Image:
@@ -23,7 +24,7 @@ export default function LandingPage() {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1920&q=80')`,
+            backgroundImage: `url(${heroImage})`,
           }}
         />
         {/* Dark gradient overlay for text readability */}
