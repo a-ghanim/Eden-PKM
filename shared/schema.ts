@@ -9,6 +9,7 @@ export type Highlight = z.infer<typeof highlightSchema>;
 
 export const savedItemSchema = z.object({
   id: z.string(),
+  userId: z.string(),
   url: z.string().refine((val) => {
     try {
       const url = new URL(val);

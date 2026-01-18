@@ -1,18 +1,28 @@
 import { useState } from "react";
-import { Bookmark, Check, Copy, GripVertical, ExternalLink } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Bookmark, Check, Copy, GripVertical, ExternalLink, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function BookmarkletPage() {
   const [copied, setCopied] = useState(false);
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   
-  // Get the current origin for the bookmarklet URL
+  const { data: tokenData, isLoading: tokenLoading, error: tokenError } = useQuery<{ token: string }>({
+    queryKey: ["/api/auth/token"],
+    enabled: isAuthenticated,
+  });
+  
   const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const token = tokenData?.token || "";
   
-  // The bookmarklet code - uses JSONP for cross-origin compatibility
-  const bookmarkletCode = `javascript:(function(){var d=document,s=d.createElement('script'),c='_eden_'+Date.now();window[c]=function(r){delete window[c];s.remove();var o=d.createElement('div');o.id='eden-toast';o.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;padding:16px 20px;border-radius:12px;font-family:system-ui,sans-serif;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:all 0.3s ease;'+(r.success?'background:#1a2e1a;color:#86efac;border:1px solid #22c55e40;':'background:#2e1a1a;color:#fca5a5;border:1px solid #ef444440;');o.innerHTML=r.success?'<strong>Saved to Eden</strong><br><span style=\"opacity:0.8\">'+r.item.title.slice(0,50)+'</span>':'<strong>Save failed</strong><br><span style=\"opacity:0.8\">'+(r.error||'Unknown error')+'</span>';d.body.appendChild(o);setTimeout(function(){o.style.opacity='0';setTimeout(function(){o.remove()},300)},3000)};s.src='${origin}/api/bookmarklet/save?callback='+c+'&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(d.title);d.body.appendChild(s)})();`;
+  const bookmarkletCode = token 
+    ? `javascript:(function(){var d=document,s=d.createElement('script'),c='_eden_'+Date.now();window[c]=function(r){delete window[c];s.remove();var o=d.createElement('div');o.id='eden-toast';o.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;padding:16px 20px;border-radius:12px;font-family:system-ui,sans-serif;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:all 0.3s ease;'+(r.success?'background:#1a2e1a;color:#86efac;border:1px solid #22c55e40;':'background:#2e1a1a;color:#fca5a5;border:1px solid #ef444440;');o.innerHTML=r.success?'<strong>Saved to Eden</strong><br><span style="opacity:0.8">'+r.item.title.slice(0,50)+'</span>':'<strong>Save failed</strong><br><span style="opacity:0.8">'+(r.error||'Unknown error')+'</span>';d.body.appendChild(o);setTimeout(function(){o.style.opacity='0';setTimeout(function(){o.remove()},300)},3000)};s.src='${origin}/api/bookmarklet/save?token=${token}&callback='+c+'&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(d.title);d.body.appendChild(s)})();`
+    : "";
 
   const handleCopy = async () => {
+    if (!bookmarkletCode) return;
     try {
       await navigator.clipboard.writeText(bookmarkletCode);
       setCopied(true);
@@ -21,6 +31,58 @@ export default function BookmarkletPage() {
       console.error("Failed to copy:", err);
     }
   };
+
+  const isLoading = authLoading || tokenLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background p-6 md:p-10">
+        <div className="max-w-2xl mx-auto space-y-8">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-destructive/20 border border-destructive/30">
+              <AlertCircle className="w-8 h-8 text-destructive" />
+            </div>
+            <h1 className="font-serif text-4xl">Sign In Required</h1>
+            <p className="text-muted-foreground text-lg">
+              You need to be signed in to use the bookmarklet
+            </p>
+            <a href="/api/login" className="inline-block">
+              <Button data-testid="button-sign-in">Sign In</Button>
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (tokenError) {
+    return (
+      <div className="min-h-screen bg-background p-6 md:p-10">
+        <div className="max-w-2xl mx-auto space-y-8">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-destructive/20 border border-destructive/30">
+              <AlertCircle className="w-8 h-8 text-destructive" />
+            </div>
+            <h1 className="font-serif text-4xl">Error Loading Token</h1>
+            <p className="text-muted-foreground text-lg">
+              Could not load your personal bookmarklet. Please try again.
+            </p>
+            <a href="/" className="inline-block">
+              <Button variant="outline" data-testid="button-back-home">Back to Eden</Button>
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-10">
@@ -37,9 +99,9 @@ export default function BookmarkletPage() {
 
         <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="font-serif text-xl">Install the Bookmarklet</CardTitle>
+            <CardTitle className="font-serif text-xl">Your Personal Bookmarklet</CardTitle>
             <CardDescription>
-              Drag the button below to your browser's bookmarks bar
+              This bookmarklet is unique to your account. Items you save will sync to your library.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -118,6 +180,20 @@ export default function BookmarkletPage() {
               <li>3. Name it "Save to Eden"</li>
               <li>4. Paste the code as the URL</li>
             </ol>
+          </CardContent>
+        </Card>
+
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="pt-6">
+            <div className="flex gap-3">
+              <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-medium text-sm">Keep your bookmarklet private</p>
+                <p className="text-sm text-muted-foreground">
+                  Your bookmarklet contains a personal token. Don't share it with others.
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Anthropic from "@anthropic-ai/sdk";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { setupAuth, registerAuthRoutes, isAuthenticated, authStorage } from "./replit_integrations/auth";
 import multer from "multer";
 import pLimit from "p-limit";
 import { createRequire } from "module";
@@ -261,19 +261,31 @@ export async function registerRoutes(
   await setupAuth(app);
   registerAuthRoutes(app);
 
-  app.get("/api/items", async (req: Request, res: Response) => {
+  app.get("/api/auth/token", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const items = await storage.getAllItems();
+      const userId = req.user.claims.sub;
+      const token = await authStorage.getOrCreateApiToken(userId);
+      res.json({ token });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get API token" });
+    }
+  });
+
+  app.get("/api/items", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.claims.sub;
+      const items = await storage.getItemsByUser(userId);
       res.json(items);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch items" });
     }
   });
 
-  app.get("/api/items/:id", async (req: Request, res: Response) => {
+  app.get("/api/items/:id", isAuthenticated, async (req: any, res: Response) => {
     try {
+      const userId = req.user.claims.sub;
       const id = req.params.id as string;
-      const item = await storage.getItem(id);
+      const item = await storage.getItem(id, userId);
       if (!item) {
         return res.status(404).json({ error: "Item not found" });
       }
@@ -283,15 +295,13 @@ export async function registerRoutes(
     }
   });
 
-  // Bookmarklet endpoint - accepts GET for cross-origin compatibility
   app.get("/api/bookmarklet/save", async (req: Request, res: Response) => {
     const url = req.query.url as string;
     const title = req.query.title as string;
     const callback = req.query.callback as string;
+    const token = req.query.token as string;
 
-    // JSONP callback for cross-origin
     if (callback) {
-      // Validate callback is a safe JavaScript identifier to prevent XSS
       const safeCallbackRegex = /^[_$a-zA-Z][_$0-9a-zA-Z]*$/;
       if (!safeCallbackRegex.test(callback)) {
         res.status(400).send("Invalid callback parameter");
@@ -299,6 +309,19 @@ export async function registerRoutes(
       }
 
       res.setHeader("Content-Type", "application/javascript");
+
+      if (!token) {
+        res.send(`${callback}(${JSON.stringify({ success: false, error: "API token required. Get your token from Settings." })})`);
+        return;
+      }
+
+      const user = await authStorage.getUserByApiToken(token);
+      if (!user) {
+        res.send(`${callback}(${JSON.stringify({ success: false, error: "Invalid API token" })})`);
+        return;
+      }
+
+      const userId = user.id;
       
       if (!url || !url.startsWith("http")) {
         res.send(`${callback}(${JSON.stringify({ success: false, error: "Invalid URL" })})`);
@@ -327,10 +350,9 @@ export async function registerRoutes(
           expiresAt: null,
         };
 
-        const newItem = await storage.createItem(parseResult.data, enrichedData);
+        const newItem = await storage.createItem(userId, parseResult.data, enrichedData);
 
-        // Find connections async (don't block response)
-        storage.getAllItems().then(async (existingItems) => {
+        storage.getItemsByUser(userId).then(async (existingItems) => {
           if (existingItems.length > 1) {
             const connectionResult = await findConnectionsWithAI(
               { title: newItem.title, summary: newItem.summary, tags: newItem.tags, concepts: newItem.concepts },
@@ -343,7 +365,7 @@ export async function registerRoutes(
               }))
             );
             if (connectionResult.connections.length > 0) {
-              await storage.updateItem(newItem.id, { 
+              await storage.updateItem(newItem.id, userId, { 
                 connections: connectionResult.connections,
                 connectionReasons: connectionResult.reasons,
               });
@@ -364,12 +386,12 @@ export async function registerRoutes(
       return;
     }
 
-    // Regular redirect response
     res.redirect(`/?saved=${encodeURIComponent(url || "")}`);
   });
 
-  app.post("/api/items/capture", async (req: Request, res: Response) => {
+  app.post("/api/items/capture", isAuthenticated, async (req: any, res: Response) => {
     try {
+      const userId = req.user.claims.sub;
       const parseResult = insertSavedItemSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ error: fromZodError(parseResult.error).message });
@@ -381,7 +403,7 @@ export async function registerRoutes(
       
       const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
       
-      const existingItems = await storage.getAllItems();
+      const existingItems = await storage.getItemsByUser(userId);
       const connectionResult = await findConnectionsWithAI(
         { title: extracted.title, summary: analysis.summary, tags: analysis.tags, concepts: analysis.concepts },
         existingItems.map((item) => ({
@@ -405,24 +427,24 @@ export async function registerRoutes(
         expiresAt: null,
       };
 
-      const newItem = await storage.createItem(insertData, enrichedData);
+      const newItem = await storage.createItem(userId, insertData, enrichedData);
 
       if (connectionResult.connections.length > 0) {
-        await storage.updateItem(newItem.id, { 
+        await storage.updateItem(newItem.id, userId, { 
           connections: connectionResult.connections,
           connectionReasons: connectionResult.reasons,
         });
         for (const connId of connectionResult.connections) {
-          const connItem = await storage.getItem(connId);
+          const connItem = await storage.getItem(connId, userId);
           if (connItem && !connItem.connections.includes(newItem.id)) {
-            await storage.updateItem(connId, {
+            await storage.updateItem(connId, userId, {
               connections: [...connItem.connections, newItem.id],
             });
           }
         }
       }
 
-      const updatedItem = await storage.getItem(newItem.id);
+      const updatedItem = await storage.getItem(newItem.id, userId);
       res.status(201).json(updatedItem);
     } catch (error) {
       console.error("Capture error:", error);
@@ -430,15 +452,16 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/items/:id", async (req: Request, res: Response) => {
+  app.patch("/api/items/:id", isAuthenticated, async (req: any, res: Response) => {
     try {
+      const userId = req.user.claims.sub;
       const id = req.params.id as string;
       const parseResult = updateSavedItemSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ error: fromZodError(parseResult.error).message });
       }
 
-      const updated = await storage.updateItem(id, parseResult.data);
+      const updated = await storage.updateItem(id, userId, parseResult.data);
       if (!updated) {
         return res.status(404).json({ error: "Item not found" });
       }
@@ -448,10 +471,11 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/items/:id", async (req: Request, res: Response) => {
+  app.delete("/api/items/:id", isAuthenticated, async (req: any, res: Response) => {
     try {
+      const userId = req.user.claims.sub;
       const id = req.params.id as string;
-      const deleted = await storage.deleteItem(id);
+      const deleted = await storage.deleteItem(id, userId);
       if (!deleted) {
         return res.status(404).json({ error: "Item not found" });
       }
@@ -461,13 +485,14 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/search", async (req: Request, res: Response) => {
+  app.get("/api/search", isAuthenticated, async (req: any, res: Response) => {
     try {
+      const userId = req.user.claims.sub;
       const query = req.query.q as string;
       if (!query) {
         return res.status(400).json({ error: "Search query is required" });
       }
-      const results = await storage.searchItems(query);
+      const results = await storage.searchItems(userId, query);
       res.json(results);
     } catch (error) {
       res.status(500).json({ error: "Search failed" });
@@ -508,7 +533,8 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/items/batch/stream", async (req: Request, res: Response) => {
+  app.post("/api/items/batch/stream", isAuthenticated, async (req: any, res: Response) => {
+    const userId = req.user.claims.sub;
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -556,7 +582,7 @@ export async function registerRoutes(
             expiresAt: null,
           };
 
-          const newItem = await storage.createItem(parseResult.data, enrichedData);
+          const newItem = await storage.createItem(userId, parseResult.data, enrichedData);
           successCount++;
           
           sendEvent({ 
@@ -566,7 +592,7 @@ export async function registerRoutes(
             progress: { success: successCount, failed: failCount, total: validUrls.length }
           });
 
-          const existingItems = await storage.getAllItems();
+          const existingItems = await storage.getItemsByUser(userId);
           if (existingItems.length > 1) {
             const connectionResult = await findConnectionsWithAI(
               { title: newItem.title, summary: newItem.summary, tags: newItem.tags, concepts: newItem.concepts },
@@ -580,19 +606,19 @@ export async function registerRoutes(
             );
 
             if (connectionResult.connections.length > 0) {
-              await storage.updateItem(newItem.id, { 
+              await storage.updateItem(newItem.id, userId, { 
                 connections: connectionResult.connections,
                 connectionReasons: connectionResult.reasons,
               });
               for (const connId of connectionResult.connections) {
-                const connItem = await storage.getItem(connId);
+                const connItem = await storage.getItem(connId, userId);
                 if (connItem && !connItem.connections.includes(newItem.id)) {
-                  await storage.updateItem(connId, {
+                  await storage.updateItem(connId, userId, {
                     connections: [...connItem.connections, newItem.id],
                   });
                 }
               }
-              const updatedItem = await storage.getItem(newItem.id);
+              const updatedItem = await storage.getItem(newItem.id, userId);
               sendEvent({ type: "connections", itemId: newItem.id, connections: connectionResult.connections, item: updatedItem });
             }
           }
@@ -618,8 +644,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/items/batch", async (req: Request, res: Response) => {
+  app.post("/api/items/batch", isAuthenticated, async (req: any, res: Response) => {
     try {
+      const userId = req.user.claims.sub;
       const { urls } = req.body as { urls: string[] };
       
       if (!urls || !Array.isArray(urls) || urls.length === 0) {
@@ -652,9 +679,9 @@ export async function registerRoutes(
             expiresAt: null,
           };
 
-          const newItem = await storage.createItem(parseResult.data, enrichedData);
+          const newItem = await storage.createItem(userId, parseResult.data, enrichedData);
 
-          const existingItems = await storage.getAllItems();
+          const existingItems = await storage.getItemsByUser(userId);
           if (existingItems.length > 1) {
             const connectionResult = await findConnectionsWithAI(
               { title: newItem.title, summary: newItem.summary, tags: newItem.tags, concepts: newItem.concepts },
@@ -668,14 +695,14 @@ export async function registerRoutes(
             );
 
             if (connectionResult.connections.length > 0) {
-              await storage.updateItem(newItem.id, { 
+              await storage.updateItem(newItem.id, userId, { 
                 connections: connectionResult.connections,
                 connectionReasons: connectionResult.reasons,
               });
               for (const connId of connectionResult.connections) {
-                const connItem = await storage.getItem(connId);
+                const connItem = await storage.getItem(connId, userId);
                 if (connItem && !connItem.connections.includes(newItem.id)) {
-                  await storage.updateItem(connId, {
+                  await storage.updateItem(connId, userId, {
                     connections: [...connItem.connections, newItem.id],
                   });
                 }
@@ -683,7 +710,7 @@ export async function registerRoutes(
             }
           }
 
-          const updatedItem = await storage.getItem(newItem.id);
+          const updatedItem = await storage.getItem(newItem.id, userId);
           results.push({ url, success: true, item: updatedItem! });
         } catch (error) {
           results.push({ 
@@ -708,7 +735,8 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/items/upload/stream", upload.array("files", 10), async (req: Request, res: Response) => {
+  app.post("/api/items/upload/stream", isAuthenticated, upload.array("files", 10), async (req: any, res: Response) => {
+    const userId = req.user.claims.sub;
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -760,7 +788,7 @@ export async function registerRoutes(
                 expiresAt: null,
               };
 
-              const newItem = await storage.createItem(parseResult.data, enrichedData);
+              const newItem = await storage.createItem(userId, parseResult.data, enrichedData);
               successCount++;
               
               sendEvent({ 
@@ -770,7 +798,7 @@ export async function registerRoutes(
                 progress: { success: successCount, failed: failCount, total: bookmarks.length }
               });
 
-              const existingItems = await storage.getAllItems();
+              const existingItems = await storage.getItemsByUser(userId);
               if (existingItems.length > 1) {
                 const connectionResult = await findConnectionsWithAI(
                   { title: newItem.title, summary: newItem.summary, tags: newItem.tags, concepts: newItem.concepts },
@@ -784,7 +812,7 @@ export async function registerRoutes(
                 );
 
                 if (connectionResult.connections.length > 0) {
-                  await storage.updateItem(newItem.id, { 
+                  await storage.updateItem(newItem.id, userId, { 
                     connections: connectionResult.connections,
                     connectionReasons: connectionResult.reasons,
                   });
@@ -828,7 +856,7 @@ export async function registerRoutes(
             expiresAt: null,
           };
 
-          const newItem = await storage.createItem(parseResult.data, enrichedData);
+          const newItem = await storage.createItem(userId, parseResult.data, enrichedData);
           sendEvent({ type: "item", index: 0, item: newItem, progress: { success: 1, failed: 0, total: 1 } });
           sendEvent({ type: "complete", success: 1, failed: 0, total: 1 });
         }
@@ -840,8 +868,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/items/upload", upload.array("files", 10), async (req: Request, res: Response) => {
+  app.post("/api/items/upload", isAuthenticated, upload.array("files", 10), async (req: any, res: Response) => {
     try {
+      const userId = req.user.claims.sub;
       const files = req.files as Express.Multer.File[];
       
       if (!files || files.length === 0) {
@@ -886,7 +915,7 @@ export async function registerRoutes(
                   expiresAt: null,
                 };
 
-                const newItem = await storage.createItem(parseResult.data, enrichedData);
+                const newItem = await storage.createItem(userId, parseResult.data, enrichedData);
                 importedItems.push(newItem);
                 successCount++;
               } catch (err) {
@@ -905,7 +934,7 @@ export async function registerRoutes(
               error: failCount > 0 ? `${failCount} bookmarks failed to import` : undefined,
             });
           } else {
-            const existingItems = await storage.getAllItems();
+            const existingItems = await storage.getItemsByUser(userId);
             const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
             
             const connectionResult = await findConnectionsWithAI(
@@ -938,24 +967,24 @@ export async function registerRoutes(
               expiresAt: null,
             };
 
-            const newItem = await storage.createItem(parseResult.data, enrichedData);
+            const newItem = await storage.createItem(userId, parseResult.data, enrichedData);
 
             if (connectionResult.connections.length > 0) {
-              await storage.updateItem(newItem.id, { 
+              await storage.updateItem(newItem.id, userId, { 
                 connections: connectionResult.connections,
                 connectionReasons: connectionResult.reasons,
               });
               for (const connId of connectionResult.connections) {
-                const connItem = await storage.getItem(connId);
+                const connItem = await storage.getItem(connId, userId);
                 if (connItem && !connItem.connections.includes(newItem.id)) {
-                  await storage.updateItem(connId, {
+                  await storage.updateItem(connId, userId, {
                     connections: [...connItem.connections, newItem.id],
                   });
                 }
               }
             }
 
-            const updatedItem = await storage.getItem(newItem.id);
+            const updatedItem = await storage.getItem(newItem.id, userId);
             results.push({ fileName: file.originalname, success: true, item: updatedItem! });
           }
         } catch (error) {

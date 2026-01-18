@@ -2,12 +2,12 @@ import type { SavedItem, Collection, Concept, InsertSavedItem, InsertCollection,
 import { randomUUID } from "crypto";
 
 export interface IStorage {
-  getAllItems(): Promise<SavedItem[]>;
-  getItem(id: string): Promise<SavedItem | undefined>;
-  createItem(insertData: InsertSavedItem, enrichedData: { title: string; content: string; summary: string; tags: string[]; concepts: string[]; domain: string; favicon?: string; imageUrl?: string; expiresAt: number | null }): Promise<SavedItem>;
-  updateItem(id: string, updates: UpdateSavedItem): Promise<SavedItem | undefined>;
-  deleteItem(id: string): Promise<boolean>;
-  searchItems(query: string): Promise<SavedItem[]>;
+  getItemsByUser(userId: string): Promise<SavedItem[]>;
+  getItem(id: string, userId: string): Promise<SavedItem | undefined>;
+  createItem(userId: string, insertData: InsertSavedItem, enrichedData: { title: string; content: string; summary: string; tags: string[]; concepts: string[]; domain: string; favicon?: string; imageUrl?: string; expiresAt: number | null }): Promise<SavedItem>;
+  updateItem(id: string, userId: string, updates: UpdateSavedItem): Promise<SavedItem | undefined>;
+  deleteItem(id: string, userId: string): Promise<boolean>;
+  searchItems(userId: string, query: string): Promise<SavedItem[]>;
   
   getAllCollections(): Promise<Collection[]>;
   getCollection(id: string): Promise<Collection | undefined>;
@@ -27,19 +27,26 @@ export class MemStorage implements IStorage {
     this.concepts = new Map();
   }
 
-  async getAllItems(): Promise<SavedItem[]> {
-    return Array.from(this.items.values()).sort((a, b) => b.savedAt - a.savedAt);
+  async getItemsByUser(userId: string): Promise<SavedItem[]> {
+    return Array.from(this.items.values())
+      .filter(item => item.userId === userId)
+      .sort((a, b) => b.savedAt - a.savedAt);
   }
 
-  async getItem(id: string): Promise<SavedItem | undefined> {
-    return this.items.get(id);
+  async getItem(id: string, userId: string): Promise<SavedItem | undefined> {
+    const item = this.items.get(id);
+    if (item && item.userId === userId) {
+      return item;
+    }
+    return undefined;
   }
 
-  async createItem(insertData: InsertSavedItem, enrichedData: { title: string; content: string; summary: string; tags: string[]; concepts: string[]; domain: string; favicon?: string; imageUrl?: string; expiresAt: number | null }): Promise<SavedItem> {
+  async createItem(userId: string, insertData: InsertSavedItem, enrichedData: { title: string; content: string; summary: string; tags: string[]; concepts: string[]; domain: string; favicon?: string; imageUrl?: string; expiresAt: number | null }): Promise<SavedItem> {
     const id = randomUUID();
     const now = Date.now();
     const newItem: SavedItem = {
       id,
+      userId,
       url: insertData.url,
       title: enrichedData.title,
       content: enrichedData.content,
@@ -62,29 +69,33 @@ export class MemStorage implements IStorage {
     return newItem;
   }
 
-  async updateItem(id: string, updates: UpdateSavedItem): Promise<SavedItem | undefined> {
+  async updateItem(id: string, userId: string, updates: UpdateSavedItem): Promise<SavedItem | undefined> {
     const item = this.items.get(id);
-    if (!item) return undefined;
+    if (!item || item.userId !== userId) return undefined;
     
     const updatedItem: SavedItem = { ...item, ...updates, lastAccessed: Date.now() };
     this.items.set(id, updatedItem);
     return updatedItem;
   }
 
-  async deleteItem(id: string): Promise<boolean> {
+  async deleteItem(id: string, userId: string): Promise<boolean> {
+    const item = this.items.get(id);
+    if (!item || item.userId !== userId) return false;
     return this.items.delete(id);
   }
 
-  async searchItems(query: string): Promise<SavedItem[]> {
+  async searchItems(userId: string, query: string): Promise<SavedItem[]> {
     const lowerQuery = query.toLowerCase();
-    return Array.from(this.items.values()).filter(
-      (item) =>
-        item.title.toLowerCase().includes(lowerQuery) ||
-        item.summary.toLowerCase().includes(lowerQuery) ||
-        item.content.toLowerCase().includes(lowerQuery) ||
-        item.tags.some((tag) => tag.toLowerCase().includes(lowerQuery)) ||
-        item.concepts.some((concept) => concept.toLowerCase().includes(lowerQuery))
-    );
+    return Array.from(this.items.values())
+      .filter(item => item.userId === userId)
+      .filter(
+        (item) =>
+          item.title.toLowerCase().includes(lowerQuery) ||
+          item.summary.toLowerCase().includes(lowerQuery) ||
+          item.content.toLowerCase().includes(lowerQuery) ||
+          item.tags.some((tag) => tag.toLowerCase().includes(lowerQuery)) ||
+          item.concepts.some((concept) => concept.toLowerCase().includes(lowerQuery))
+      );
   }
 
   async getAllCollections(): Promise<Collection[]> {
