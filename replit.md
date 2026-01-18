@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
+### User Authentication & Multi-User Support
+- **Replit Auth**: OIDC-based authentication with Google, GitHub, Apple, and email/password support
+- **User-Scoped Items**: All saved items are now associated with a userId - users only see their own content
+- **API Tokens**: Each user gets a unique API token (format: `eden_<uuid>`) for bookmarklet authentication
+- **Protected Endpoints**: All item CRUD endpoints require authentication via `isAuthenticated` middleware
+- **Bookmarklet Auth**: The bookmarklet uses API token for cross-origin authentication (JSONP-based)
+- **Session Storage**: PostgreSQL-backed sessions via connect-pg-simple
+
 ### Design Overhaul (Matter.app Inspired)
 - **Theme**: Dark-first design with near-black background (hsl(0 0% 4%))
 - **Branding**: Minimal "eden" text wordmark (Instrument Serif font)
