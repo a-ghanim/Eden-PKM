@@ -1,37 +1,43 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Plus, Sparkles, ArrowRight } from "lucide-react";
+import { Plus, Sparkles, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEden } from "@/lib/store";
 import { SavedItemCard } from "@/components/SavedItemCard";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Link } from "wouter";
 
 export default function HomePage() {
   const { items, setIsCapturing, setIsChatOpen } = useEden();
 
-  const categorizedItems = useMemo(() => {
-    const byIntent: Record<string, typeof items> = {
-      read_later: [],
-      reference: [],
-      inspiration: [],
-      tutorial: [],
-    };
+  const tagBasedSections = useMemo(() => {
+    const tagCounts: Record<string, typeof items> = {};
     
     items.forEach((item) => {
-      if (byIntent[item.intent]) {
-        byIntent[item.intent].push(item);
-      }
+      item.tags.forEach((tag) => {
+        if (!tagCounts[tag]) {
+          tagCounts[tag] = [];
+        }
+        if (!tagCounts[tag].find(i => i.id === item.id)) {
+          tagCounts[tag].push(item);
+        }
+      });
     });
 
-    return byIntent;
+    const sortedTags = Object.entries(tagCounts)
+      .filter(([, tagItems]) => tagItems.length >= 2)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 4);
+
+    return sortedTags;
   }, [items]);
 
-  const featuredItem = items[0];
-  const recentItems = items.slice(1, 7);
+  const topPicks = items.slice(0, 3);
+  const recentItems = items.slice(0, 6);
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background dotted-grid-subtle flex items-center justify-center p-8">
+      <div className="min-h-screen bg-background flex items-center justify-center p-8">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -39,19 +45,18 @@ export default function HomePage() {
           className="max-w-2xl mx-auto text-center"
         >
           <div className="relative mb-12">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sphere-3d opacity-20 animate-pulse-glow" />
-            <h1 className="font-serif text-6xl md:text-7xl leading-none tracking-tight reveal-up">
+            <h1 className="font-serif text-6xl md:text-7xl leading-none tracking-tight">
               Your second
               <br />
-              <span className="text-gradient-accent">brain.</span>
+              <span className="text-accent">brain.</span>
             </h1>
           </div>
 
-          <p className="text-lg text-muted-foreground mb-10 reveal-up reveal-up-delay-1 max-w-md mx-auto">
+          <p className="text-lg text-muted-foreground mb-10 max-w-md mx-auto">
             Eden captures, organizes, and resurfaces knowledge from across the web. Start by saving your first URL.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 reveal-up reveal-up-delay-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button 
               size="lg" 
               onClick={() => setIsCapturing(true)} 
@@ -71,136 +76,98 @@ export default function HomePage() {
               Ask Eden anything
             </Button>
           </div>
-
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
-            <div className="w-20 h-20 sphere-glass animate-float opacity-30" />
-          </div>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="p-6 md:p-8 space-y-12">
+    <div className="min-h-screen bg-background">
+      <div className="p-4 md:p-6 space-y-8">
+        {topPicks.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-lg font-medium text-foreground">Top Picks</h2>
+              <div className="flex gap-2 overflow-x-auto">
+                {tagBasedSections.slice(0, 3).map(([tag]) => (
+                  <button
+                    key={tag}
+                    className="px-3 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {topPicks.map((item) => (
+                <SavedItemCard key={item.id} item={item} variant="matter" />
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {tagBasedSections.map(([tag, tagItems], sectionIndex) => (
+          <motion.section
+            key={tag}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 + sectionIndex * 0.05 }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-medium text-foreground">{tag}</h2>
+                <span className="text-xs text-muted-foreground">·</span>
+                <span className="text-xs text-muted-foreground">{tagItems.length}</span>
+              </div>
+              <Button variant="ghost" size="sm" className="text-muted-foreground h-7 px-2">
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+            <ScrollArea className="w-full">
+              <div className="flex gap-3 pb-4">
+                {tagItems.slice(0, 6).map((item) => (
+                  <SavedItemCard 
+                    key={item.id} 
+                    item={item} 
+                    variant="matter-scroll"
+                    className="flex-shrink-0"
+                  />
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </motion.section>
+        ))}
+
         <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
         >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="font-serif text-3xl tracking-tight">Recent</h2>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-medium text-foreground">Recent</h2>
+              <span className="text-xs text-muted-foreground">·</span>
+              <span className="text-xs text-muted-foreground">{recentItems.length}</span>
+            </div>
             <Link href="/search">
-              <Button variant="ghost" size="sm" className="text-muted-foreground gap-1">
-                View all <ArrowRight className="w-3 h-3" />
+              <Button variant="ghost" size="sm" className="text-muted-foreground h-7 px-2">
+                View all <ChevronRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" style={{
-            gridAutoRows: "minmax(180px, auto)",
-          }}>
-            {featuredItem && (
-              <SavedItemCard item={featuredItem} variant="featured" />
-            )}
-            {recentItems.slice(0, 4).map((item, index) => (
-              <SavedItemCard 
-                key={item.id} 
-                item={item} 
-                variant={index === 0 ? "wide" : "default"}
-              />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {recentItems.map((item) => (
+              <SavedItemCard key={item.id} item={item} variant="matter-grid" />
             ))}
           </div>
         </motion.section>
-
-        {categorizedItems.read_later.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-serif text-2xl tracking-tight">Read Later</h2>
-              <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-                {categorizedItems.read_later.length} items
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {categorizedItems.read_later.slice(0, 4).map((item) => (
-                <SavedItemCard key={item.id} item={item} />
-              ))}
-            </div>
-          </motion.section>
-        )}
-
-        {categorizedItems.inspiration.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-serif text-2xl tracking-tight">Inspiration</h2>
-              <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-                {categorizedItems.inspiration.length} items
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {categorizedItems.inspiration.slice(0, 4).map((item) => (
-                <SavedItemCard key={item.id} item={item} />
-              ))}
-            </div>
-          </motion.section>
-        )}
-
-        {categorizedItems.tutorial.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-serif text-2xl tracking-tight">Tutorials</h2>
-              <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-                {categorizedItems.tutorial.length} items
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {categorizedItems.tutorial.slice(0, 4).map((item) => (
-                <SavedItemCard key={item.id} item={item} />
-              ))}
-            </div>
-          </motion.section>
-        )}
-
-        {categorizedItems.reference.length > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-serif text-2xl tracking-tight">Reference</h2>
-              <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-                {categorizedItems.reference.length} items
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {categorizedItems.reference.slice(0, 4).map((item) => (
-                <SavedItemCard key={item.id} item={item} />
-              ))}
-            </div>
-          </motion.section>
-        )}
       </div>
-
-      <footer className="mt-20 p-8 border-t border-border/30">
-        <div className="text-center">
-          <h2 className="font-serif text-8xl md:text-[12rem] tracking-tighter text-muted-foreground/10 select-none">
-            eden
-          </h2>
-        </div>
-      </footer>
     </div>
   );
 }

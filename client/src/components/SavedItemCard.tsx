@@ -12,7 +12,7 @@ import { useEden } from "@/lib/store";
 
 interface SavedItemCardProps {
   item: SavedItem;
-  variant?: "default" | "compact" | "featured" | "wide";
+  variant?: "default" | "compact" | "featured" | "wide" | "matter" | "matter-scroll" | "matter-grid";
   className?: string;
 }
 
@@ -44,6 +44,133 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
     window.open(item.url, "_blank");
   };
 
+  if (variant === "matter") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`group cursor-pointer ${className}`}
+        onClick={handleClick}
+        data-testid={`card-item-matter-${item.id}`}
+      >
+        <div className="relative rounded-xl overflow-hidden bg-card/50 h-[280px]">
+          {item.imageUrl ? (
+            <img
+              src={item.imageUrl}
+              alt=""
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-accent/20 to-accent/5" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          <div className="absolute top-3 left-3 flex items-center gap-2">
+            <span className="text-[11px] text-white/80 font-medium">
+              {item.domain}
+            </span>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <h3 className="font-medium text-white text-sm leading-snug line-clamp-2 mb-2">
+              {item.title}
+            </h3>
+            <p className="text-xs text-white/70 line-clamp-2">
+              {item.summary}
+            </p>
+          </div>
+          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Button variant="secondary" size="icon" className="h-7 w-7 bg-black/50 hover:bg-black/70 border-0">
+                  <MoreHorizontal className="w-3.5 h-3.5 text-white" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleOpenExternal}>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open original
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (variant === "matter-scroll") {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={`group cursor-pointer w-[240px] ${className}`}
+        onClick={handleClick}
+        data-testid={`card-item-scroll-${item.id}`}
+      >
+        <div className="relative rounded-xl overflow-hidden bg-card/50 h-[200px]">
+          {item.imageUrl ? (
+            <img
+              src={item.imageUrl}
+              alt=""
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-accent/20 to-accent/5" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <div className="absolute top-2.5 left-2.5">
+            <span className="text-[10px] text-white/70">
+              {item.domain}
+            </span>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-3">
+            <h3 className="font-medium text-white text-[13px] leading-snug line-clamp-2">
+              {item.title}
+            </h3>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (variant === "matter-grid") {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={`group cursor-pointer ${className}`}
+        onClick={handleClick}
+        data-testid={`card-item-grid-${item.id}`}
+      >
+        <div className="relative rounded-xl overflow-hidden bg-card/50 aspect-[4/3]">
+          {item.imageUrl ? (
+            <img
+              src={item.imageUrl}
+              alt=""
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-accent/20 to-accent/5" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <div className="absolute top-2 left-2">
+            <span className="text-[10px] text-white/60">
+              {item.domain}
+            </span>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-2.5">
+            <h3 className="font-medium text-white text-xs leading-snug line-clamp-2">
+              {item.title}
+            </h3>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   if (variant === "compact") {
     return (
       <motion.div
@@ -61,7 +188,7 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
             <p className="text-sm font-medium truncate">{item.title}</p>
             <p className="text-xs text-muted-foreground">{item.domain}</p>
           </div>
-          <span className="tag-pill-muted text-[10px]">
+          <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
             {item.tags[0] || "Saved"}
           </span>
         </div>
@@ -75,10 +202,10 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className={`bento-featured ${className}`}
+        className={className}
       >
         <div
-          className="bento-card group cursor-pointer h-full card-hover-lift"
+          className="group cursor-pointer rounded-xl overflow-hidden bg-card border border-border/50 h-full"
           onClick={handleClick}
           data-testid={`card-item-featured-${item.id}`}
         >
@@ -89,34 +216,20 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
                 alt=""
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 card-image-overlay" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
               <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                <div className="flex items-center gap-2 mb-3 flex-wrap">
-                  {item.tags.slice(0, 3).map((tag, i) => (
-                    <span key={tag} className={i === 0 ? "tag-pill text-[10px]" : "tag-pill-muted text-[10px]"}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                <span className="text-xs text-white/70 mb-2">{item.domain}</span>
                 <h3 className="font-serif text-2xl leading-tight text-white mb-2">
                   {item.title}
                 </h3>
-                <p className="text-sm text-white/70 line-clamp-2 mb-3">
+                <p className="text-sm text-white/70 line-clamp-2">
                   {item.summary}
                 </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/60 flex items-center gap-2">
-                    {item.domain}
-                  </span>
-                  <span className="text-xs text-white/60">
-                    {formatDate(item.savedAt)}
-                  </span>
-                </div>
               </div>
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                    <Button variant="secondary" size="icon" className="h-8 w-8 glass">
+                    <Button variant="secondary" size="icon" className="h-8 w-8 bg-black/50">
                       <MoreHorizontal className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -144,10 +257,10 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`bento-wide ${className}`}
+        className={className}
       >
         <div
-          className="bento-card group cursor-pointer h-full card-hover-lift overflow-hidden"
+          className="group cursor-pointer rounded-xl overflow-hidden bg-card border border-border/50 h-full"
           onClick={handleClick}
           data-testid={`card-item-wide-${item.id}`}
         >
@@ -162,24 +275,16 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
               </div>
             )}
             <div className="flex-1 p-5 flex flex-col">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                {item.tags.slice(0, 2).map((tag, i) => (
-                  <span key={tag} className={i === 0 ? "tag-pill text-[10px]" : "tag-pill-muted text-[10px]"}>
-                    {tag}
-                  </span>
-                ))}
-              </div>
+              <span className="text-xs text-muted-foreground mb-2">{item.domain}</span>
               <h3 className="font-serif text-xl leading-tight mb-2">
                 {item.title}
               </h3>
               <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
                 {item.summary}
               </p>
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
-                <span className="text-xs text-muted-foreground">{item.domain}</span>
-                <span className="text-xs text-muted-foreground">·</span>
-                <span className="text-xs text-muted-foreground">{formatDate(item.savedAt)}</span>
-              </div>
+              <span className="text-xs text-muted-foreground mt-3">
+                {formatDate(item.savedAt)}
+              </span>
             </div>
           </div>
         </div>
@@ -194,7 +299,7 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
       className={className}
     >
       <div
-        className="bento-card group cursor-pointer h-full card-hover-lift"
+        className="group cursor-pointer rounded-xl overflow-hidden bg-card border border-border/50 h-full"
         onClick={handleClick}
         data-testid={`card-item-${item.id}`}
       >
@@ -209,28 +314,13 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
           </div>
         )}
         <div className="p-4">
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
-            {item.tags.slice(0, 2).map((tag, i) => (
-              <span key={tag} className={i === 0 ? "tag-pill text-[10px]" : "tag-pill-muted text-[10px]"}>
-                {tag}
-              </span>
-            ))}
-          </div>
-          <h3 className="font-medium text-sm leading-snug line-clamp-2 mb-2">
+          <span className="text-[10px] text-muted-foreground">{item.domain}</span>
+          <h3 className="font-medium text-sm leading-snug line-clamp-2 mt-1 mb-2">
             {item.title}
           </h3>
-          <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+          <p className="text-xs text-muted-foreground line-clamp-2">
             {item.summary}
           </p>
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-2 border-t border-border/30">
-            <span className="flex items-center gap-1.5">
-              {item.favicon && (
-                <img src={item.favicon} alt="" className="w-3 h-3 rounded" />
-              )}
-              {item.domain}
-            </span>
-            <span>{formatDate(item.savedAt)}</span>
-          </div>
         </div>
       </div>
     </motion.div>

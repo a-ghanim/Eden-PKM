@@ -10,13 +10,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
-### Design Overhaul
+### Design Overhaul (Matter.app Inspired)
 - **Theme**: Dark-first design with near-black background (hsl(0 0% 4%))
 - **Branding**: Minimal "eden" text wordmark (Instrument Serif font)
 - **Typography**: Instrument Serif for headings, Inter for body text
-- **Cards**: Matter-style image-forward bento grid with glassmorphism effects
-- **Effects**: Dotted grid backgrounds, floating 3D spheres, glassmorphism panels
-- **Knowledge Graph**: 3D force-directed layout with tag-based clusters and liquid blob boundaries
+- **Home Layout**: 
+  - Top Picks: 3 featured cards in a grid
+  - Tag-based sections: Horizontal scrolling rows grouped by common tags
+  - Recent: Grid of smaller cards at bottom
+- **Cards**: Image-forward design with domain at top-left, gradient overlays, title overlaid on image
+- **Card Variants**: matter (280px), matter-scroll (240x200px horizontal), matter-grid (4:3 aspect)
+- **Knowledge Graph**: D3.js force-directed layout with emergent semantic clustering
 - **Colors**: Muted sage accent (#6b8a7a), subtle borders, soft glows
 
 ## System Architecture
