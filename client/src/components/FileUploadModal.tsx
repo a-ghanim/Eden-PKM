@@ -192,48 +192,33 @@ export function FileUploadModal({ open, onOpenChange }: FileUploadModalProps) {
 
         {!isComplete ? (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div
+            <label
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer block ${
                 isDragging
                   ? "border-accent bg-accent/10"
-                  : "border-border/50 hover:border-border"
+                  : "border-border/50 hover:border-border hover:bg-muted/30"
               }`}
               data-testid="dropzone-file-upload"
             >
+              <input
+                type="file"
+                multiple
+                accept={acceptedTypes}
+                onChange={handleFileSelect}
+                className="hidden"
+                data-testid="input-file-upload"
+              />
               <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground mb-2">
-                Drag and drop files here, or
+              <p className="text-sm text-muted-foreground mb-1">
+                Drag and drop files here, or click to browse
               </p>
-              <label>
-                <input
-                  type="file"
-                  multiple
-                  accept={acceptedTypes}
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  data-testid="input-file-upload"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    (e.currentTarget.previousElementSibling as HTMLInputElement)?.click();
-                  }}
-                  data-testid="button-browse-files"
-                >
-                  Browse Files
-                </Button>
-              </label>
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-xs text-muted-foreground">
                 Up to 10 files (HTML, PDF, TXT, MD, DOC)
               </p>
-            </div>
+            </label>
 
             {files.length > 0 && !isLoading && (
               <div className="space-y-2 max-h-40 overflow-y-auto">
