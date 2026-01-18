@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ExternalLink, MoreHorizontal, Trash2 } from "lucide-react";
+import { ExternalLink, MoreHorizontal, Trash2, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -44,47 +44,83 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
     window.open(item.url, "_blank");
   };
 
+  // Beautiful gradient backgrounds for items without images
+  const getPlaceholderGradient = (id: number | string) => {
+    const gradients = [
+      "from-violet-600/80 via-purple-500/70 to-fuchsia-500/80",
+      "from-cyan-600/80 via-teal-500/70 to-emerald-500/80",
+      "from-orange-500/80 via-amber-500/70 to-yellow-500/80",
+      "from-rose-600/80 via-pink-500/70 to-fuchsia-500/80",
+      "from-blue-600/80 via-indigo-500/70 to-violet-500/80",
+      "from-emerald-600/80 via-green-500/70 to-teal-500/80",
+    ];
+    // Hash the ID to get a consistent index
+    const numericId = typeof id === 'string' 
+      ? id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+      : id;
+    return gradients[Math.abs(numericId) % gradients.length];
+  };
+
   if (variant === "matter") {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
         className={`group cursor-pointer ${className}`}
         onClick={handleClick}
         data-testid={`card-item-matter-${item.id}`}
       >
-        <div className="relative rounded-xl overflow-hidden bg-card/50 h-[280px]">
+        <div className="relative rounded-2xl overflow-hidden h-[280px] shadow-lg shadow-black/10 dark:shadow-black/30 ring-1 ring-white/10 dark:ring-white/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/20 dark:group-hover:shadow-black/40 group-hover:ring-white/20">
           {item.imageUrl ? (
             <img
               src={item.imageUrl}
               alt=""
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 dark:from-accent/20 dark:to-accent/5" />
+            <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient(item.id)}`}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
+              <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent" />
+            </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
-          <div className="absolute top-3 left-3 flex items-center gap-2">
-            <span className="text-[11px] text-white/90 font-medium drop-shadow-sm">
-              {item.domain}
-            </span>
+          {/* Multi-layer gradient overlay for depth */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/30" />
+          
+          {/* Domain pill with glass effect */}
+          <div className="absolute top-3 left-3 flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
+              {item.favicon ? (
+                <img src={item.favicon} alt="" className="w-3.5 h-3.5 rounded-sm" />
+              ) : (
+                <Globe className="w-3 h-3 text-white/70" />
+              )}
+              <span className="text-[11px] text-white/90 font-medium tracking-wide">
+                {item.domain}
+              </span>
+            </div>
           </div>
+          
+          {/* Content with improved typography */}
           <div className="absolute bottom-0 left-0 right-0 p-4">
-            <h3 className="font-medium text-white text-sm leading-snug line-clamp-2 mb-2 drop-shadow-sm">
+            <h3 className="font-semibold text-white text-[15px] leading-[1.35] line-clamp-2 mb-2 tracking-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
               {item.title}
             </h3>
-            <p className="text-xs text-white/80 line-clamp-2 drop-shadow-sm">
+            <p className="text-[13px] text-white/75 line-clamp-2 leading-relaxed" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
               {item.summary}
             </p>
           </div>
-          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          
+          {/* Hover actions with glass effect */}
+          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="secondary" size="icon" className="h-7 w-7 bg-black/50 hover:bg-black/70 border-0">
-                  <MoreHorizontal className="w-3.5 h-3.5 text-white" />
+                <Button variant="secondary" size="icon" className="h-8 w-8 bg-black/40 backdrop-blur-md hover:bg-black/60 border border-white/10 shadow-lg">
+                  <MoreHorizontal className="w-4 h-4 text-white" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="backdrop-blur-xl">
                 <DropdownMenuItem onClick={handleOpenExternal}>
                   <ExternalLink className="w-4 h-4 mr-2" />
                   Open original
@@ -104,30 +140,40 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
   if (variant === "matter-scroll") {
     return (
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className={`group cursor-pointer w-[240px] ${className}`}
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className={`group cursor-pointer w-[260px] ${className}`}
         onClick={handleClick}
         data-testid={`card-item-scroll-${item.id}`}
       >
-        <div className="relative rounded-xl overflow-hidden bg-card/50 h-[200px]">
+        <div className="relative rounded-2xl overflow-hidden h-[180px] shadow-md shadow-black/10 dark:shadow-black/25 ring-1 ring-white/10 dark:ring-white/5 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-black/15 dark:group-hover:shadow-black/35 group-hover:ring-white/15">
           {item.imageUrl ? (
             <img
               src={item.imageUrl}
               alt=""
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-[1.02]"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 dark:from-accent/20 dark:to-accent/5" />
+            <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient(item.id)}`}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_50%)]" />
+            </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
+          {/* Gradient overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+          
+          {/* Domain with glass pill */}
           <div className="absolute top-2.5 left-2.5">
-            <span className="text-[10px] text-white/80 drop-shadow-sm">
-              {item.domain}
-            </span>
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/35 backdrop-blur-sm border border-white/10">
+              <span className="text-[10px] text-white/85 font-medium tracking-wide">
+                {item.domain}
+              </span>
+            </div>
           </div>
+          
+          {/* Title with improved styling */}
           <div className="absolute bottom-0 left-0 right-0 p-3">
-            <h3 className="font-medium text-white text-[13px] leading-snug line-clamp-2 drop-shadow-sm">
+            <h3 className="font-semibold text-white text-[13px] leading-snug line-clamp-2 tracking-tight" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
               {item.title}
             </h3>
           </div>
@@ -139,30 +185,40 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
   if (variant === "matter-grid") {
     return (
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
         className={`group cursor-pointer ${className}`}
         onClick={handleClick}
         data-testid={`card-item-grid-${item.id}`}
       >
-        <div className="relative rounded-xl overflow-hidden bg-card/50 aspect-[4/3]">
+        <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md shadow-black/10 dark:shadow-black/25 ring-1 ring-white/10 dark:ring-white/5 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-black/15 dark:group-hover:shadow-black/35 group-hover:ring-white/15">
           {item.imageUrl ? (
             <img
               src={item.imageUrl}
               alt=""
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-[1.02]"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 dark:from-accent/20 dark:to-accent/5" />
+            <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient(item.id)}`}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_50%)]" />
+            </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
+          {/* Gradient overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+          
+          {/* Domain with glass pill */}
           <div className="absolute top-2 left-2">
-            <span className="text-[10px] text-white/80 drop-shadow-sm">
-              {item.domain}
-            </span>
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/35 backdrop-blur-sm border border-white/10">
+              <span className="text-[9px] text-white/85 font-medium tracking-wide">
+                {item.domain}
+              </span>
+            </div>
           </div>
+          
+          {/* Title with improved styling */}
           <div className="absolute bottom-0 left-0 right-0 p-2.5">
-            <h3 className="font-medium text-white text-xs leading-snug line-clamp-2 drop-shadow-sm">
+            <h3 className="font-semibold text-white text-xs leading-snug line-clamp-2 tracking-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
               {item.title}
             </h3>
           </div>
@@ -176,19 +232,28 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
+        transition={{ duration: 0.25 }}
         className={`group cursor-pointer ${className}`}
         onClick={handleClick}
         data-testid={`card-item-${item.id}`}
       >
-        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors">
-          {item.favicon && (
-            <img src={item.favicon} alt="" className="w-5 h-5 rounded" />
-          )}
+        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-all duration-200 border border-transparent hover:border-border/30">
+          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-muted/50 ring-1 ring-border/20">
+            {item.imageUrl ? (
+              <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+            ) : item.favicon ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <img src={item.favicon} alt="" className="w-5 h-5" />
+              </div>
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient(item.id)}`} />
+            )}
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{item.title}</p>
+            <p className="text-sm font-medium truncate tracking-tight">{item.title}</p>
             <p className="text-xs text-muted-foreground">{item.domain}</p>
           </div>
-          <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+          <span className="text-[10px] text-muted-foreground bg-muted/80 px-2.5 py-1 rounded-full font-medium">
             {item.tags[0] || "Saved"}
           </span>
         </div>
@@ -201,52 +266,67 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
         className={className}
       >
         <div
-          className="group cursor-pointer rounded-xl overflow-hidden bg-card border border-border/50 h-full"
+          className="group cursor-pointer rounded-2xl overflow-hidden h-full shadow-xl shadow-black/15 dark:shadow-black/40 ring-1 ring-white/10 dark:ring-white/5 transition-all duration-300 group-hover:shadow-2xl group-hover:ring-white/20"
           onClick={handleClick}
           data-testid={`card-item-featured-${item.id}`}
         >
-          {item.imageUrl && (
-            <div className="relative h-full min-h-[280px]">
+          <div className="relative h-full min-h-[280px]">
+            {item.imageUrl ? (
               <img
                 src={item.imageUrl}
                 alt=""
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.02]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-              <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                <span className="text-xs text-white/70 mb-2">{item.domain}</span>
-                <h3 className="font-serif text-2xl leading-tight text-white mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-white/70 line-clamp-2">
-                  {item.summary}
-                </p>
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient(item.id)}`}>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
               </div>
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                    <Button variant="secondary" size="icon" className="h-8 w-8 bg-black/50">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleOpenExternal}>
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Open original
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+            )}
+            {/* Multi-layer gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/30" />
+            
+            <div className="absolute inset-0 p-6 flex flex-col justify-end">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 w-fit mb-3">
+                {item.favicon ? (
+                  <img src={item.favicon} alt="" className="w-3.5 h-3.5 rounded-sm" />
+                ) : (
+                  <Globe className="w-3 h-3 text-white/70" />
+                )}
+                <span className="text-[11px] text-white/90 font-medium tracking-wide">{item.domain}</span>
               </div>
+              <h3 className="font-semibold text-2xl leading-tight text-white mb-3 tracking-tight" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                {item.title}
+              </h3>
+              <p className="text-sm text-white/80 line-clamp-2 leading-relaxed" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                {item.summary}
+              </p>
             </div>
-          )}
+            
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="secondary" size="icon" className="h-9 w-9 bg-black/40 backdrop-blur-md hover:bg-black/60 border border-white/10 shadow-lg">
+                    <MoreHorizontal className="w-4 h-4 text-white" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="backdrop-blur-xl">
+                  <DropdownMenuItem onClick={handleOpenExternal}>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Open original
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </div>
       </motion.div>
     );
@@ -257,32 +337,40 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
         className={className}
       >
         <div
-          className="group cursor-pointer rounded-xl overflow-hidden bg-card border border-border/50 h-full"
+          className="group cursor-pointer rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm border border-border/30 h-full shadow-sm shadow-black/5 dark:shadow-black/20 ring-1 ring-white/5 transition-all duration-300 group-hover:shadow-md group-hover:border-border/50 group-hover:ring-white/10"
           onClick={handleClick}
           data-testid={`card-item-wide-${item.id}`}
         >
           <div className="flex h-full">
-            {item.imageUrl && (
-              <div className="relative w-1/3 min-w-[160px]">
+            <div className="relative w-1/3 min-w-[160px] overflow-hidden">
+              {item.imageUrl ? (
                 <img
                   src={item.imageUrl}
                   alt=""
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-[1.03]"
                 />
-              </div>
-            )}
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient(item.id)}`}>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_50%)]" />
+                </div>
+              )}
+            </div>
             <div className="flex-1 p-5 flex flex-col">
-              <span className="text-xs text-muted-foreground mb-2">{item.domain}</span>
-              <h3 className="font-serif text-xl leading-tight mb-2">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/60 w-fit mb-2">
+                {item.favicon && <img src={item.favicon} alt="" className="w-3 h-3 rounded-sm" />}
+                <span className="text-[10px] text-muted-foreground font-medium">{item.domain}</span>
+              </div>
+              <h3 className="font-semibold text-lg leading-tight mb-2 tracking-tight">
                 {item.title}
               </h3>
-              <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
+              <p className="text-sm text-muted-foreground line-clamp-2 flex-grow leading-relaxed">
                 {item.summary}
               </p>
-              <span className="text-xs text-muted-foreground mt-3">
+              <span className="text-xs text-muted-foreground/70 mt-3">
                 {formatDate(item.savedAt)}
               </span>
             </div>
@@ -292,33 +380,45 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
     );
   }
 
+  // Default variant - Card style with image on top
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={className}
     >
       <div
-        className="group cursor-pointer rounded-xl overflow-hidden bg-card border border-border/50 h-full"
+        className="group cursor-pointer rounded-2xl overflow-hidden bg-card/80 backdrop-blur-sm border border-border/30 h-full shadow-sm shadow-black/5 dark:shadow-black/20 ring-1 ring-white/5 transition-all duration-300 group-hover:shadow-md group-hover:border-border/50 group-hover:ring-white/10"
         onClick={handleClick}
         data-testid={`card-item-${item.id}`}
       >
-        {item.imageUrl && (
-          <div className="relative h-32 overflow-hidden">
+        <div className="relative h-36 overflow-hidden">
+          {item.imageUrl ? (
             <img
               src={item.imageUrl}
               alt=""
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-[1.03]"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+          ) : (
+            <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient(item.id)}`}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_50%)]" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+          
+          {/* Domain pill on image */}
+          <div className="absolute top-2.5 left-2.5">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-sm border border-white/10">
+              <span className="text-[9px] text-white/90 font-medium tracking-wide">{item.domain}</span>
+            </div>
           </div>
-        )}
+        </div>
         <div className="p-4">
-          <span className="text-[10px] text-muted-foreground">{item.domain}</span>
-          <h3 className="font-medium text-sm leading-snug line-clamp-2 mt-1 mb-2">
+          <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-2 tracking-tight">
             {item.title}
           </h3>
-          <p className="text-xs text-muted-foreground line-clamp-2">
+          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
             {item.summary}
           </p>
         </div>
