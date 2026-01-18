@@ -142,15 +142,81 @@ async function extractContentFromUrl(url: string): Promise<{ title: string; cont
     const domain = urlObj.hostname.replace("www.", "");
     const favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
     
-    return {
-      title: domain,
-      content: `This is captured content from ${url}. In a production environment, we would fetch and parse the actual webpage content here.`,
-      domain,
-      favicon,
-      imageUrl: `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800`,
-    };
+    console.log(`[URL] Fetching content from: ${url}`);
+    
+    // Fetch the actual webpage content
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; EdenBot/1.0; +https://eden.app)",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.5",
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        console.log(`[URL] HTTP error ${response.status} for ${url}`);
+        return {
+          title: domain,
+          content: `Failed to fetch content from ${url} (HTTP ${response.status})`,
+          domain,
+          favicon,
+        };
+      }
+      
+      const html = await response.text();
+      console.log(`[URL] Received ${html.length} bytes from ${url}`);
+      
+      // Extract title
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+      const title = titleMatch ? titleMatch[1].trim().slice(0, 200) : domain;
+      
+      // Extract OG image if available
+      const ogImageMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i) ||
+                           html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i);
+      const imageUrl = ogImageMatch ? ogImageMatch[1] : undefined;
+      
+      // Extract text content
+      const textContent = html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+        .replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, "")
+        .replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, "")
+        .replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      
+      console.log(`[URL] Extracted ${textContent.length} chars, title: "${title.slice(0, 50)}..."`);
+      
+      return {
+        title,
+        content: textContent.slice(0, 50000),
+        domain,
+        favicon,
+        imageUrl,
+      };
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError instanceof Error && fetchError.name === "AbortError") {
+        console.log(`[URL] Timeout fetching ${url}`);
+        return {
+          title: domain,
+          content: `Request timed out while fetching ${url}`,
+          domain,
+          favicon,
+        };
+      }
+      throw fetchError;
+    }
   } catch (error) {
-    throw new Error("Invalid URL provided");
+    console.error(`[URL] Error extracting content from ${url}:`, error);
+    throw new Error(`Failed to extract content from URL: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
 
