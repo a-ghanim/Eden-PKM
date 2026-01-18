@@ -12,13 +12,17 @@ export function ReaderMode() {
 
   if (!selectedItem) return null;
 
-  const relatedItems = items
-    .filter((item) => 
-      item.id !== selectedItem.id && 
-      (selectedItem.connections.includes(item.id) ||
-       item.tags.some((tag) => selectedItem.tags.includes(tag)))
-    )
-    .slice(0, 3);
+  // First try to find connected items or items with shared tags
+  const connectedItems = items.filter((item) => 
+    item.id !== selectedItem.id && 
+    (selectedItem.connections.includes(item.id) ||
+     item.tags.some((tag) => selectedItem.tags.includes(tag)))
+  );
+  
+  // If no connections found, fall back to showing other items
+  const relatedItems = connectedItems.length > 0 
+    ? connectedItems.slice(0, 6)
+    : items.filter((item) => item.id !== selectedItem.id).slice(0, 6);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
