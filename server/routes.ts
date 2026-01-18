@@ -5,8 +5,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { setupAuth, registerAuthRoutes, isAuthenticated, authStorage } from "./replit_integrations/auth";
 import multer from "multer";
 import pLimit from "p-limit";
-import * as pdfParseModule from "pdf-parse";
-const pdfParse = (pdfParseModule as any).default || pdfParseModule;
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 import { insertSavedItemSchema, updateSavedItemSchema, chatRequestSchema, type InsertSavedItem, type SavedItem } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 
