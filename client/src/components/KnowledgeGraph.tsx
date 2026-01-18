@@ -154,7 +154,7 @@ export function KnowledgeGraph() {
         </div>
       </div>
 
-      <div className="relative h-[600px] rounded-2xl overflow-hidden dotted-grid-subtle border border-border/30">
+      <div className="relative h-[600px] rounded-2xl overflow-hidden bg-background dotted-grid-subtle border border-border/30">
         <svg className="absolute inset-0 w-full h-full">
           <defs>
             <filter id="goo">

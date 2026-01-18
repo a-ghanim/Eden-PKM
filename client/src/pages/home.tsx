@@ -31,7 +31,7 @@ export default function HomePage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen dotted-grid-subtle flex items-center justify-center p-8">
+      <div className="min-h-screen bg-background dotted-grid-subtle flex items-center justify-center p-8">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
