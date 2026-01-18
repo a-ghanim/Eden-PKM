@@ -8,6 +8,17 @@ Eden is an intelligent personal knowledge management (PKM) application designed 
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (January 2026)
+
+### Design Overhaul
+- **Theme**: Dark-first design with near-black background (hsl(0 0% 4%))
+- **Branding**: Minimal "eden" text wordmark (Instrument Serif font)
+- **Typography**: Instrument Serif for headings, Inter for body text
+- **Cards**: Matter-style image-forward bento grid with glassmorphism effects
+- **Effects**: Dotted grid backgrounds, floating 3D spheres, glassmorphism panels
+- **Knowledge Graph**: 3D force-directed layout with tag-based clusters and liquid blob boundaries
+- **Colors**: Muted sage accent (#6b8a7a), subtle borders, soft glows
+
 ## System Architecture
 
 ### Frontend Architecture
