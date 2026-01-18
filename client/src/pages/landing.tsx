@@ -3,6 +3,14 @@ import { Link } from "wouter";
 import { ArrowRight, Sparkles, Network, Brain, Zap, Layers, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@assets/blade-lustre-RLUrtznJ4EU-unsplash_1768744151563.jpg";
+import {
+  CaptureIllustration,
+  AIAnalysisIllustration,
+  ConnectionsIllustration,
+  CollectionsIllustration,
+  SearchIllustration,
+  KnowledgeGraphIllustration,
+} from "@/components/bento-illustrations";
 
 /**
  * Midjourney Prompt for Hero Image:
@@ -145,9 +153,11 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative sm:col-span-2 lg:row-span-2 rounded-3xl bg-gradient-to-br from-accent/20 to-accent/5 border border-border/50 p-8 hover-elevate"
+            className="relative sm:col-span-2 lg:row-span-2 rounded-3xl bg-gradient-to-br from-accent/20 to-accent/5 border border-border/50 p-8 hover-elevate overflow-hidden"
+            data-testid="card-capture"
           >
-            <div className="relative z-10">
+            <CaptureIllustration />
+            <div className="relative z-10 mt-4">
               <div className="w-14 h-14 rounded-2xl bg-accent/20 flex items-center justify-center mb-6">
                 <Zap className="w-7 h-7 text-accent" />
               </div>
@@ -165,8 +175,10 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate"
+            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate overflow-hidden"
+            data-testid="card-ai-analysis"
           >
+            <AIAnalysisIllustration />
             <div className="relative z-10">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                 <Brain className="w-6 h-6 text-primary" />
@@ -184,8 +196,10 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate"
+            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate overflow-hidden"
+            data-testid="card-connections"
           >
+            <ConnectionsIllustration />
             <div className="relative z-10">
               <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
                 <Network className="w-6 h-6 text-accent" />
@@ -203,8 +217,10 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate"
+            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate overflow-hidden"
+            data-testid="card-collections"
           >
+            <CollectionsIllustration />
             <div className="relative z-10">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                 <Layers className="w-6 h-6 text-primary" />
@@ -222,8 +238,10 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate"
+            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate overflow-hidden"
+            data-testid="card-search"
           >
+            <SearchIllustration />
             <div className="relative z-10">
               <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
                 <Search className="w-6 h-6 text-accent" />
@@ -241,13 +259,19 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="relative sm:col-span-2 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 p-8 hover-elevate"
+            className="relative sm:col-span-2 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 p-8 hover-elevate overflow-hidden"
+            data-testid="card-knowledge-graph"
           >
-            <div className="relative z-10">
-              <h3 className="font-serif text-2xl mb-2">Knowledge Graph</h3>
-              <p className="text-muted-foreground max-w-md">
-                Visualize how your ideas connect. Watch clusters emerge as you save more content.
-              </p>
+            <div className="flex flex-col md:flex-row gap-6 items-center">
+              <div className="relative z-10 flex-1">
+                <h3 className="font-serif text-2xl mb-2">Knowledge Graph</h3>
+                <p className="text-muted-foreground max-w-md">
+                  Visualize how your ideas connect. Watch clusters emerge as you save more content.
+                </p>
+              </div>
+              <div className="flex-1 w-full">
+                <KnowledgeGraphIllustration />
+              </div>
             </div>
           </motion.div>
         </div>
