@@ -21,8 +21,9 @@ import CollectionsPage from "@/pages/collections";
 import GraphPage from "@/pages/graph";
 import SettingsPage from "@/pages/settings";
 import BookmarkletPage from "@/pages/bookmarklet";
+import LandingPage from "@/pages/landing";
 
-function Router() {
+function AppRouter() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
@@ -53,7 +54,7 @@ function AppLayout() {
             <ThemeToggle />
           </header>
           <main className="flex-1 overflow-auto">
-            <Router />
+            <AppRouter />
           </main>
         </SidebarInset>
       </div>
@@ -66,13 +67,24 @@ function AppLayout() {
   );
 }
 
+function MainRouter() {
+  return (
+    <Switch>
+      <Route path="/landing" component={LandingPage} />
+      <Route>
+        <AppLayout />
+      </Route>
+    </Switch>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark">
         <EdenProvider>
           <TooltipProvider>
-            <AppLayout />
+            <MainRouter />
             <Toaster />
           </TooltipProvider>
         </EdenProvider>
