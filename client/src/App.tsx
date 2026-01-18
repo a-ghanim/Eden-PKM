@@ -14,6 +14,7 @@ import { FileUploadModal } from "@/components/FileUploadModal";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ReaderMode } from "@/components/ReaderMode";
 import { useEden } from "@/lib/store";
+import { useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home";
 import SearchPage from "@/pages/search";
@@ -22,6 +23,7 @@ import GraphPage from "@/pages/graph";
 import SettingsPage from "@/pages/settings";
 import BookmarkletPage from "@/pages/bookmarklet";
 import LandingPage from "@/pages/landing";
+import { Loader2 } from "lucide-react";
 
 function AppRouter() {
   return (
@@ -67,12 +69,30 @@ function AppLayout() {
   );
 }
 
+function AuthenticatedApp() {
+  const { user, isLoading, isAuthenticated } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-accent" data-testid="loading-spinner" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LandingPage />;
+  }
+
+  return <AppLayout />;
+}
+
 function MainRouter() {
   return (
     <Switch>
       <Route path="/landing" component={LandingPage} />
       <Route>
-        <AppLayout />
+        <AuthenticatedApp />
       </Route>
     </Switch>
   );

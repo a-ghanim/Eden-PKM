@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Anthropic from "@anthropic-ai/sdk";
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import multer from "multer";
 import pLimit from "p-limit";
 import { createRequire } from "module";
@@ -257,6 +258,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  await setupAuth(app);
+  registerAuthRoutes(app);
+
   app.get("/api/items", async (req: Request, res: Response) => {
     try {
       const items = await storage.getAllItems();

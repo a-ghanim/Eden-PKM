@@ -29,7 +29,9 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useEden } from "@/lib/store";
+import { useAuth } from "@/hooks/use-auth";
 
 const mainNavItems = [
   { title: "Home", url: "/", icon: Home },
@@ -49,8 +51,13 @@ const filterItems = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { items, setIsCapturing, setIsBatchImporting, setIsFileUploading, setIsChatOpen, selectedIntent, setSelectedIntent } = useEden();
+  const { user } = useAuth();
 
   const unreadCount = items.filter((item) => !item.isRead).length;
+
+  const userInitials = user 
+    ? `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'
+    : 'U';
 
   return (
     <Sidebar className="border-r border-sidebar-border/50">
@@ -148,7 +155,27 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 space-y-1">
+      <SidebarFooter className="p-3 space-y-2">
+        {user && (
+          <div className="flex items-center gap-3 px-3 py-2" data-testid="container-user-profile">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || 'User'} />
+              <AvatarFallback className="text-xs bg-accent text-accent-foreground">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-medium truncate" data-testid="text-user-name">
+                {user.firstName || user.email?.split('@')[0] || 'User'}
+              </span>
+              {user.email && (
+                <span className="text-xs text-muted-foreground truncate" data-testid="text-user-email">
+                  {user.email}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
         <SidebarMenuButton
           onClick={() => setIsChatOpen(true)}
           className="rounded-xl justify-start"
@@ -164,10 +191,10 @@ export function AppSidebar() {
           </Link>
         </SidebarMenuButton>
         <SidebarMenuButton asChild className="rounded-xl">
-          <Link href="/landing" data-testid="button-logout">
+          <a href="/api/logout" data-testid="button-logout">
             <LogOut className="w-4 h-4" />
             <span>Log out</span>
-          </Link>
+          </a>
         </SidebarMenuButton>
       </SidebarFooter>
 

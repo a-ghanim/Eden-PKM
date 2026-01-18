@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { Link } from "wouter";
 import { ArrowRight, Sparkles, Network, Brain, Zap, Layers, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@assets/blade-lustre-RLUrtznJ4EU-unsplash_1768744151563.jpg";
@@ -91,16 +90,16 @@ export default function LandingPage() {
               className="flex flex-col sm:flex-row gap-4"
               data-testid="container-hero-ctas"
             >
-              <Link href="/" data-testid="link-get-started">
+              <a href="/api/login" data-testid="link-get-started">
                 <Button 
                   size="lg" 
                   className="h-14 px-8 text-lg rounded-full gradient-fill-button text-black font-medium gap-2"
                   data-testid="button-get-started"
                 >
-                  Get Started
+                  Sign In
                   <ArrowRight className="w-5 h-5" />
                 </Button>
-              </Link>
+              </a>
               <Button 
                 variant="ghost" 
                 size="lg" 

@@ -106,11 +106,4 @@ export const chatRequestSchema = z.object({
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
 
-export const users = {
-  id: "",
-  username: "",
-  password: "",
-};
-
-export type User = typeof users;
-export type InsertUser = Omit<User, "id">;
+export * from "./models/auth";
