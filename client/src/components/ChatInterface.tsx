@@ -203,20 +203,20 @@ export function ChatInterface() {
           </ScrollArea>
 
           <form onSubmit={handleSubmit} className="p-4 border-t border-border/30">
-            <div className="relative">
+            <div className="flex items-center gap-2">
               <Input
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask about your knowledge..."
-                className="pr-12 h-11 rounded-xl bg-muted/50 border-border/50"
+                className="flex-1 h-11 rounded-xl bg-muted/50 border-border/50"
                 disabled={isLoading}
                 data-testid="input-chat"
               />
               <Button
                 type="submit"
                 size="icon"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg bg-accent hover:bg-accent/90"
+                className="h-11 w-11 rounded-xl shrink-0"
                 disabled={!input.trim() || isLoading}
                 data-testid="button-chat-send"
               >
