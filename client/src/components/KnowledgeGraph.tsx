@@ -1,11 +1,19 @@
-import { useEffect, useRef, useMemo, useState } from "react";
+import { useEffect, useRef, useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Globe, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { ExternalLink, Globe, ZoomIn, ZoomOut, Maximize2, Filter, X, Tag, Globe2, Lightbulb, ChevronDown, Check, Minus } from "lucide-react";
 import * as d3 from "d3";
 import { useEden } from "@/lib/store";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/components/ThemeProvider";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SavedItem } from "@shared/schema";
+
+type FilterMode = "neutral" | "include" | "exclude";
+
+interface FilterState {
+  [key: string]: FilterMode;
+}
 
 interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -48,6 +56,13 @@ export function KnowledgeGraph() {
   const [hoveredNode, setHoveredNode] = useState<SavedItem | null>(null);
   const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
   const [transform, setTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
+  const [showFilters, setShowFilters] = useState(false);
+  const [activeFilterTab, setActiveFilterTab] = useState<"tags" | "domains" | "concepts">("tags");
+  
+  // Filter states
+  const [tagFilters, setTagFilters] = useState<FilterState>({});
+  const [domainFilters, setDomainFilters] = useState<FilterState>({});
+  const [conceptFilters, setConceptFilters] = useState<FilterState>({});
   
   // Theme-aware colors
   const isDark = theme === "dark";
@@ -58,13 +73,78 @@ export function KnowledgeGraph() {
     labelText: isDark ? "hsl(0, 0%, 60%)" : "hsl(40, 10%, 35%)",
     hoverStroke: isDark ? "white" : "hsl(40, 10%, 20%)",
   };
+  
+  // Extract unique values from items
+  const allTags = useMemo(() => [...new Set(items.flatMap(item => item.tags))].sort(), [items]);
+  const allDomains = useMemo(() => [...new Set(items.map(item => item.domain))].sort(), [items]);
+  const allConcepts = useMemo(() => [...new Set(items.flatMap(item => item.concepts || []))].sort(), [items]);
+  
+  // Cycle filter mode: neutral -> include -> exclude -> neutral
+  const cycleFilterMode = useCallback((
+    key: string,
+    filters: FilterState,
+    setFilters: React.Dispatch<React.SetStateAction<FilterState>>
+  ) => {
+    const current = filters[key] || "neutral";
+    const next: FilterMode = current === "neutral" ? "include" : current === "include" ? "exclude" : "neutral";
+    setFilters(prev => {
+      if (next === "neutral") {
+        const { [key]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [key]: next };
+    });
+  }, []);
+  
+  // Clear all filters
+  const clearAllFilters = useCallback(() => {
+    setTagFilters({});
+    setDomainFilters({});
+    setConceptFilters({});
+  }, []);
+  
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    return Object.values(tagFilters).filter(v => v !== "neutral").length +
+           Object.values(domainFilters).filter(v => v !== "neutral").length +
+           Object.values(conceptFilters).filter(v => v !== "neutral").length;
+  }, [tagFilters, domainFilters, conceptFilters]);
+  
+  // Filter items based on current filters
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      // Check tag filters
+      const includedTags = Object.entries(tagFilters).filter(([_, mode]) => mode === "include").map(([tag]) => tag);
+      const excludedTags = Object.entries(tagFilters).filter(([_, mode]) => mode === "exclude").map(([tag]) => tag);
+      
+      if (includedTags.length > 0 && !includedTags.some(tag => item.tags.includes(tag))) return false;
+      if (excludedTags.some(tag => item.tags.includes(tag))) return false;
+      
+      // Check domain filters
+      const includedDomains = Object.entries(domainFilters).filter(([_, mode]) => mode === "include").map(([d]) => d);
+      const excludedDomains = Object.entries(domainFilters).filter(([_, mode]) => mode === "exclude").map(([d]) => d);
+      
+      if (includedDomains.length > 0 && !includedDomains.includes(item.domain)) return false;
+      if (excludedDomains.includes(item.domain)) return false;
+      
+      // Check concept filters
+      const itemConcepts = item.concepts || [];
+      const includedConcepts = Object.entries(conceptFilters).filter(([_, mode]) => mode === "include").map(([c]) => c);
+      const excludedConcepts = Object.entries(conceptFilters).filter(([_, mode]) => mode === "exclude").map(([c]) => c);
+      
+      if (includedConcepts.length > 0 && !includedConcepts.some(concept => itemConcepts.includes(concept))) return false;
+      if (excludedConcepts.some(concept => itemConcepts.includes(concept))) return false;
+      
+      return true;
+    });
+  }, [items, tagFilters, domainFilters, conceptFilters]);
 
   const { nodes, links } = useMemo(() => {
-    if (items.length === 0) return { nodes: [], links: [] };
+    if (filteredItems.length === 0) return { nodes: [], links: [] };
 
-    const graphNodes: GraphNode[] = items.map((item) => {
+    const graphNodes: GraphNode[] = filteredItems.map((item) => {
       const primaryTag = item.tags[0] || "default";
-      const connectionCount = items.filter((other) =>
+      const connectionCount = filteredItems.filter((other) =>
         other.id !== item.id && other.tags.some((t) => item.tags.includes(t))
       ).length;
 
@@ -77,13 +157,13 @@ export function KnowledgeGraph() {
     });
 
     const graphLinks: GraphLink[] = [];
-    for (let i = 0; i < items.length; i++) {
-      for (let j = i + 1; j < items.length; j++) {
-        const sharedTags = items[i].tags.filter((tag) => items[j].tags.includes(tag));
+    for (let i = 0; i < filteredItems.length; i++) {
+      for (let j = i + 1; j < filteredItems.length; j++) {
+        const sharedTags = filteredItems[i].tags.filter((tag) => filteredItems[j].tags.includes(tag));
         if (sharedTags.length > 0) {
           graphLinks.push({
-            source: items[i].id,
-            target: items[j].id,
+            source: filteredItems[i].id,
+            target: filteredItems[j].id,
             strength: sharedTags.length,
           });
         }
@@ -91,7 +171,7 @@ export function KnowledgeGraph() {
     }
 
     return { nodes: graphNodes, links: graphLinks };
-  }, [items]);
+  }, [filteredItems]);
 
   useEffect(() => {
     if (!svgRef.current || !containerRef.current || nodes.length === 0) return;
@@ -286,42 +366,237 @@ export function KnowledgeGraph() {
 
   const uniqueTags = Array.from(new Set(items.flatMap((item) => item.tags))).slice(0, 6);
 
+  // Helper component for filter chips
+  const FilterChip = ({ label, mode, onClick, color }: { label: string; mode: FilterMode; onClick: () => void; color?: string }) => {
+    const getModeStyles = () => {
+      if (mode === "include") {
+        return "bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-400";
+      }
+      if (mode === "exclude") {
+        return "bg-rose-500/20 border-rose-500/50 text-rose-600 dark:text-rose-400";
+      }
+      return "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:border-border";
+    };
+    
+    const getModeIcon = () => {
+      if (mode === "include") return <Check className="w-3 h-3" />;
+      if (mode === "exclude") return <X className="w-3 h-3" />;
+      return null;
+    };
+
+    return (
+      <button
+        onClick={onClick}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${getModeStyles()}`}
+        data-testid={`filter-chip-${label}`}
+      >
+        {color && mode === "neutral" && (
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+        )}
+        {getModeIcon()}
+        <span className="truncate max-w-[120px]">{label}</span>
+      </button>
+    );
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-serif text-3xl tracking-tight mb-1">Knowledge Graph</h1>
           <p className="text-sm text-muted-foreground">
-            {items.length} nodes, {links.length} connections — drag nodes to rearrange
+            {filteredItems.length} of {items.length} nodes, {links.length} connections
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => handleZoom("out")}
-            className="h-8 w-8"
+            variant={showFilters ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="gap-2"
+            data-testid="button-toggle-filters"
           >
-            <ZoomOut className="w-4 h-4" />
+            <Filter className="w-4 h-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
+                {activeFilterCount}
+              </Badge>
+            )}
           </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => handleZoom("in")}
-            className="h-8 w-8"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => handleZoom("reset")}
-            className="h-8 w-8"
-          >
-            <Maximize2 className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button size="icon" variant="ghost" onClick={() => handleZoom("out")} className="h-8 w-8" data-testid="button-zoom-out">
+              <ZoomOut className="w-4 h-4" />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={() => handleZoom("in")} className="h-8 w-8" data-testid="button-zoom-in">
+              <ZoomIn className="w-4 h-4" />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={() => handleZoom("reset")} className="h-8 w-8" data-testid="button-zoom-reset">
+              <Maximize2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Filter Panel */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
+              {/* Filter tabs */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+                  <button
+                    onClick={() => setActiveFilterTab("tags")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      activeFilterTab === "tags" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    data-testid="tab-tags"
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    Tags
+                    <span className="text-xs opacity-60">({allTags.length})</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveFilterTab("domains")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      activeFilterTab === "domains" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    data-testid="tab-domains"
+                  >
+                    <Globe2 className="w-3.5 h-3.5" />
+                    Domains
+                    <span className="text-xs opacity-60">({allDomains.length})</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveFilterTab("concepts")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      activeFilterTab === "concepts" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    data-testid="tab-concepts"
+                  >
+                    <Lightbulb className="w-3.5 h-3.5" />
+                    Concepts
+                    <span className="text-xs opacity-60">({allConcepts.length})</span>
+                  </button>
+                </div>
+                {activeFilterCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-muted-foreground" data-testid="button-clear-filters">
+                    <X className="w-3.5 h-3.5 mr-1" />
+                    Clear all
+                  </Button>
+                )}
+              </div>
+              
+              {/* Filter hint */}
+              <div className="flex items-center gap-4 mb-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground/30" /> Click once to include
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" /> Included
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" /> Excluded
+                </span>
+              </div>
+
+              {/* Filter chips */}
+              <div className="max-h-[140px] overflow-y-auto">
+                <div className="flex flex-wrap gap-2">
+                  {activeFilterTab === "tags" && allTags.map(tag => (
+                    <FilterChip
+                      key={tag}
+                      label={tag}
+                      mode={tagFilters[tag] || "neutral"}
+                      onClick={() => cycleFilterMode(tag, tagFilters, setTagFilters)}
+                      color={getTagColor(tag)}
+                    />
+                  ))}
+                  {activeFilterTab === "domains" && allDomains.map(domain => (
+                    <FilterChip
+                      key={domain}
+                      label={domain}
+                      mode={domainFilters[domain] || "neutral"}
+                      onClick={() => cycleFilterMode(domain, domainFilters, setDomainFilters)}
+                    />
+                  ))}
+                  {activeFilterTab === "concepts" && allConcepts.map(concept => (
+                    <FilterChip
+                      key={concept}
+                      label={concept}
+                      mode={conceptFilters[concept] || "neutral"}
+                      onClick={() => cycleFilterMode(concept, conceptFilters, setConceptFilters)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Active filters summary */}
+              {activeFilterCount > 0 && (
+                <div className="mt-4 pt-3 border-t border-border/30">
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(tagFilters).filter(([_, mode]) => mode !== "neutral").map(([tag, mode]) => (
+                      <Badge
+                        key={`active-tag-${tag}`}
+                        variant="outline"
+                        className={`${mode === "include" ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400" : "border-rose-500/50 text-rose-600 dark:text-rose-400"}`}
+                      >
+                        <Tag className="w-3 h-3 mr-1" />
+                        {mode === "include" ? "+" : "−"}{tag}
+                        <button
+                          onClick={() => cycleFilterMode(tag, tagFilters, setTagFilters)}
+                          className="ml-1 hover:opacity-70"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                    {Object.entries(domainFilters).filter(([_, mode]) => mode !== "neutral").map(([domain, mode]) => (
+                      <Badge
+                        key={`active-domain-${domain}`}
+                        variant="outline"
+                        className={`${mode === "include" ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400" : "border-rose-500/50 text-rose-600 dark:text-rose-400"}`}
+                      >
+                        <Globe2 className="w-3 h-3 mr-1" />
+                        {mode === "include" ? "+" : "−"}{domain}
+                        <button
+                          onClick={() => cycleFilterMode(domain, domainFilters, setDomainFilters)}
+                          className="ml-1 hover:opacity-70"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                    {Object.entries(conceptFilters).filter(([_, mode]) => mode !== "neutral").map(([concept, mode]) => (
+                      <Badge
+                        key={`active-concept-${concept}`}
+                        variant="outline"
+                        className={`${mode === "include" ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400" : "border-rose-500/50 text-rose-600 dark:text-rose-400"}`}
+                      >
+                        <Lightbulb className="w-3 h-3 mr-1" />
+                        {mode === "include" ? "+" : "−"}{concept}
+                        <button
+                          onClick={() => cycleFilterMode(concept, conceptFilters, setConceptFilters)}
+                          className="ml-1 hover:opacity-70"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div
         ref={containerRef}
@@ -342,6 +617,7 @@ export function KnowledgeGraph() {
           style={{ cursor: "grab" }}
         />
 
+        {/* Legend */}
         <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-3">
           <div className="flex flex-wrap items-center gap-3">
             {uniqueTags.map((tag) => (
@@ -356,11 +632,21 @@ export function KnowledgeGraph() {
           </div>
         </div>
 
+        {/* Zoom level indicator */}
         <div className="absolute bottom-4 right-4 glass rounded-xl px-3 py-1.5">
           <span className="text-xs text-muted-foreground">
             {Math.round(transform.k * 100)}%
           </span>
         </div>
+        
+        {/* Filter status overlay */}
+        {activeFilterCount > 0 && (
+          <div className="absolute top-4 left-4 glass rounded-lg px-3 py-2">
+            <span className="text-xs text-muted-foreground">
+              Showing {filteredItems.length} of {items.length} items
+            </span>
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
