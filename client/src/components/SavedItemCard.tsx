@@ -61,19 +61,19 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-accent/20 to-accent/5" />
+            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 dark:from-accent/20 dark:to-accent/5" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
           <div className="absolute top-3 left-3 flex items-center gap-2">
-            <span className="text-[11px] text-white/80 font-medium">
+            <span className="text-[11px] text-white/90 font-medium drop-shadow-sm">
               {item.domain}
             </span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 p-4">
-            <h3 className="font-medium text-white text-sm leading-snug line-clamp-2 mb-2">
+            <h3 className="font-medium text-white text-sm leading-snug line-clamp-2 mb-2 drop-shadow-sm">
               {item.title}
             </h3>
-            <p className="text-xs text-white/70 line-clamp-2">
+            <p className="text-xs text-white/80 line-clamp-2 drop-shadow-sm">
               {item.summary}
             </p>
           </div>
@@ -118,16 +118,16 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-accent/20 to-accent/5" />
+            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 dark:from-accent/20 dark:to-accent/5" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
           <div className="absolute top-2.5 left-2.5">
-            <span className="text-[10px] text-white/70">
+            <span className="text-[10px] text-white/80 drop-shadow-sm">
               {item.domain}
             </span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 p-3">
-            <h3 className="font-medium text-white text-[13px] leading-snug line-clamp-2">
+            <h3 className="font-medium text-white text-[13px] leading-snug line-clamp-2 drop-shadow-sm">
               {item.title}
             </h3>
           </div>
@@ -153,16 +153,16 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-accent/20 to-accent/5" />
+            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 dark:from-accent/20 dark:to-accent/5" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
           <div className="absolute top-2 left-2">
-            <span className="text-[10px] text-white/60">
+            <span className="text-[10px] text-white/80 drop-shadow-sm">
               {item.domain}
             </span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 p-2.5">
-            <h3 className="font-medium text-white text-xs leading-snug line-clamp-2">
+            <h3 className="font-medium text-white text-xs leading-snug line-clamp-2 drop-shadow-sm">
               {item.title}
             </h3>
           </div>
