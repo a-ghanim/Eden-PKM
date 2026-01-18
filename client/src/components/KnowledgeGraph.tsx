@@ -1,87 +1,177 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, Globe } from "lucide-react";
 import { useEden } from "@/lib/store";
 import type { SavedItem } from "@shared/schema";
 
-interface NodePosition {
+interface GraphNode {
   id: string;
   x: number;
   y: number;
+  vx: number;
+  vy: number;
   item: SavedItem;
+  color: string;
+  size: number;
 }
 
 interface Connection {
   source: string;
   target: string;
-  sharedTags: string[];
+  strength: number;
 }
 
-const nodeColors = [
-  "hsl(160, 50%, 45%)",
-  "hsl(200, 70%, 50%)",
-  "hsl(280, 60%, 55%)",
-  "hsl(45, 85%, 55%)",
-  "hsl(340, 70%, 55%)",
-  "hsl(30, 80%, 55%)",
+const tagColors: Record<string, string> = {};
+const colorPalette = [
+  "#6b8a7a", // sage
+  "#7c9eb2", // steel blue
+  "#b8a9c9", // lavender
+  "#d4a574", // tan
+  "#9db4ab", // mint
+  "#c9a9a9", // dusty rose
+  "#a9c9c4", // teal
+  "#c4b896", // olive
 ];
+
+function getTagColor(tag: string): string {
+  if (!tagColors[tag]) {
+    const index = Object.keys(tagColors).length % colorPalette.length;
+    tagColors[tag] = colorPalette[index];
+  }
+  return tagColors[tag];
+}
 
 export function KnowledgeGraph() {
   const { items, setSelectedItem } = useEden();
+  const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [hoveredNode, setHoveredNode] = useState<SavedItem | null>(null);
   const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
+  const animationRef = useRef<number>();
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const { nodes, connections } = useMemo(() => {
-    if (items.length === 0) return { nodes: [], connections: [] };
-
-    const nodePositions: NodePosition[] = [];
+  const connections = useMemo(() => {
     const conns: Connection[] = [];
-
-    const width = 100;
-    const height = 100;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.35;
-
-    items.forEach((item, index) => {
-      const angle = (index / items.length) * 2 * Math.PI - Math.PI / 2;
-      const jitterX = (Math.random() - 0.5) * 8;
-      const jitterY = (Math.random() - 0.5) * 8;
-      
-      nodePositions.push({
-        id: item.id,
-        x: centerX + Math.cos(angle) * radius + jitterX,
-        y: centerY + Math.sin(angle) * radius + jitterY,
-        item,
-      });
-    });
-
     for (let i = 0; i < items.length; i++) {
       for (let j = i + 1; j < items.length; j++) {
-        const itemA = items[i];
-        const itemB = items[j];
-        const sharedTags = itemA.tags.filter((tag) => itemB.tags.includes(tag));
-        
+        const sharedTags = items[i].tags.filter((tag) => items[j].tags.includes(tag));
         if (sharedTags.length > 0) {
           conns.push({
-            source: itemA.id,
-            target: itemB.id,
-            sharedTags,
+            source: items[i].id,
+            target: items[j].id,
+            strength: sharedTags.length,
           });
         }
       }
     }
-
-    return { nodes: nodePositions, connections: conns };
+    return conns;
   }, [items]);
 
-  const getNodeColor = useCallback((item: SavedItem) => {
-    const primaryTag = item.tags[0] || "";
-    const hash = primaryTag.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return nodeColors[hash % nodeColors.length];
-  }, []);
+  useEffect(() => {
+    if (items.length === 0) return;
 
-  const handleNodeHover = (node: NodePosition, e: React.MouseEvent) => {
+    const width = 800;
+    const height = 600;
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    const initialNodes: GraphNode[] = items.map((item, i) => {
+      const angle = (i / items.length) * 2 * Math.PI;
+      const radius = 150 + Math.random() * 100;
+      const primaryTag = item.tags[0] || "default";
+      
+      return {
+        id: item.id,
+        x: centerX + Math.cos(angle) * radius,
+        y: centerY + Math.sin(angle) * radius,
+        vx: 0,
+        vy: 0,
+        item,
+        color: getTagColor(primaryTag),
+        size: 8 + item.tags.length * 2 + item.connections.length,
+      };
+    });
+
+    setNodes(initialNodes);
+
+    let iteration = 0;
+    const maxIterations = 300;
+
+    const simulate = () => {
+      if (iteration >= maxIterations) return;
+
+      setNodes((prevNodes) => {
+        const newNodes = prevNodes.map((node) => ({ ...node }));
+
+        newNodes.forEach((node) => {
+          const dx = centerX - node.x;
+          const dy = centerY - node.y;
+          node.vx += dx * 0.001;
+          node.vy += dy * 0.001;
+        });
+
+        for (let i = 0; i < newNodes.length; i++) {
+          for (let j = i + 1; j < newNodes.length; j++) {
+            const dx = newNodes[j].x - newNodes[i].x;
+            const dy = newNodes[j].y - newNodes[i].y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const minDist = 60;
+
+            if (dist < minDist) {
+              const force = (minDist - dist) / dist * 0.5;
+              const fx = dx * force;
+              const fy = dy * force;
+              newNodes[i].vx -= fx;
+              newNodes[i].vy -= fy;
+              newNodes[j].vx += fx;
+              newNodes[j].vy += fy;
+            }
+          }
+        }
+
+        connections.forEach((conn) => {
+          const source = newNodes.find((n) => n.id === conn.source);
+          const target = newNodes.find((n) => n.id === conn.target);
+          if (source && target) {
+            const dx = target.x - source.x;
+            const dy = target.y - source.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const idealDist = 100 - conn.strength * 15;
+            const force = (dist - idealDist) / dist * 0.02 * conn.strength;
+            const fx = dx * force;
+            const fy = dy * force;
+            source.vx += fx;
+            source.vy += fy;
+            target.vx -= fx;
+            target.vy -= fy;
+          }
+        });
+
+        newNodes.forEach((node) => {
+          node.vx *= 0.85;
+          node.vy *= 0.85;
+          node.x += node.vx;
+          node.y += node.vy;
+          node.x = Math.max(50, Math.min(width - 50, node.x));
+          node.y = Math.max(50, Math.min(height - 50, node.y));
+        });
+
+        return newNodes;
+      });
+
+      iteration++;
+      animationRef.current = requestAnimationFrame(simulate);
+    };
+
+    animationRef.current = requestAnimationFrame(simulate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [items, connections]);
+
+  const handleNodeHover = (node: GraphNode, e: React.MouseEvent) => {
     setHoveredNode(node.item);
     setHoveredPosition({ x: e.clientX, y: e.clientY });
   };
@@ -116,114 +206,115 @@ export function KnowledgeGraph() {
     );
   }
 
+  const uniqueTags = Array.from(new Set(items.flatMap((item) => item.tags))).slice(0, 6);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-serif text-3xl tracking-tight mb-1">Knowledge Graph</h1>
           <p className="text-sm text-muted-foreground">
-            {items.length} items with {connections.length} connections
+            {items.length} nodes, {connections.length} connections
           </p>
         </div>
       </div>
 
-      <div className="relative h-[600px] rounded-2xl overflow-hidden bg-card/50 border border-border/30">
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            {nodes.map((node) => (
-              <radialGradient key={`glow-${node.id}`} id={`glow-${node.id}`}>
-                <stop offset="0%" stopColor={getNodeColor(node.item)} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={getNodeColor(node.item)} stopOpacity="0" />
-              </radialGradient>
-            ))}
-          </defs>
+      <div 
+        ref={containerRef}
+        className="relative h-[600px] rounded-2xl overflow-hidden bg-[hsl(0_0%_6%)] border border-border/20"
+      >
+        <div 
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, hsl(0 0% 20%) 1px, transparent 0)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
 
-          {connections.map((conn, index) => {
-            const sourceNode = nodes.find((n) => n.id === conn.source);
-            const targetNode = nodes.find((n) => n.id === conn.target);
-            if (!sourceNode || !targetNode) return null;
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 600">
+          {connections.map((conn) => {
+            const source = nodes.find((n) => n.id === conn.source);
+            const target = nodes.find((n) => n.id === conn.target);
+            if (!source || !target) return null;
 
             return (
-              <motion.line
+              <line
                 key={`${conn.source}-${conn.target}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.15 + conn.sharedTags.length * 0.1 }}
-                transition={{ delay: 0.5 + index * 0.02 }}
-                x1={sourceNode.x}
-                y1={sourceNode.y}
-                x2={targetNode.x}
-                y2={targetNode.y}
-                stroke="currentColor"
-                strokeWidth={0.15 + conn.sharedTags.length * 0.1}
-                className="text-foreground"
+                x1={source.x}
+                y1={source.y}
+                x2={target.x}
+                y2={target.y}
+                stroke="hsl(0 0% 40%)"
+                strokeWidth={0.5 + conn.strength * 0.5}
+                strokeOpacity={0.3 + conn.strength * 0.1}
               />
             );
           })}
 
-          {nodes.map((node, index) => {
-            const color = getNodeColor(node.item);
+          {nodes.map((node) => {
             const isHovered = hoveredNode?.id === node.id;
-            const nodeSize = 2.5 + (node.item.tags.length * 0.3);
+            const isConnectedToHovered = hoveredNode && connections.some(
+              (c) => (c.source === hoveredNode.id && c.target === node.id) ||
+                     (c.target === hoveredNode.id && c.source === node.id)
+            );
 
             return (
               <g key={node.id}>
-                <motion.circle
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 0.4 }}
-                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                <circle
                   cx={node.x}
                   cy={node.y}
-                  r={nodeSize * 2}
-                  fill={`url(#glow-${node.id})`}
+                  r={node.size * 2.5}
+                  fill={node.color}
+                  opacity={0.15}
                 />
-                <motion.circle
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ 
-                    scale: isHovered ? 1.3 : 1, 
-                    opacity: 1 
-                  }}
-                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                <circle
                   cx={node.x}
                   cy={node.y}
-                  r={nodeSize}
-                  fill={color}
-                  stroke={isHovered ? "white" : color}
-                  strokeWidth={isHovered ? 0.3 : 0.15}
-                  className="cursor-pointer"
-                  style={{ filter: `drop-shadow(0 0 2px ${color})` }}
+                  r={node.size}
+                  fill={node.color}
+                  stroke={isHovered ? "white" : node.color}
+                  strokeWidth={isHovered ? 2 : 1}
+                  opacity={isHovered || isConnectedToHovered ? 1 : 0.85}
+                  className="cursor-pointer transition-all duration-150"
+                  style={{ 
+                    filter: isHovered ? `drop-shadow(0 0 8px ${node.color})` : 'none',
+                    transform: isHovered ? 'scale(1.2)' : 'scale(1)',
+                    transformOrigin: `${node.x}px ${node.y}px`,
+                  }}
                   onMouseEnter={(e) => handleNodeHover(node, e as unknown as React.MouseEvent)}
                   onMouseLeave={() => setHoveredNode(null)}
                   onClick={() => setSelectedItem(node.item)}
                 />
-                <motion.text
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: isHovered ? 1 : 0.7 }}
-                  transition={{ delay: index * 0.05 + 0.2 }}
+                <text
                   x={node.x}
-                  y={node.y + nodeSize + 2}
+                  y={node.y + node.size + 14}
                   textAnchor="middle"
-                  className="fill-foreground pointer-events-none select-none"
-                  style={{ fontSize: "2px", fontWeight: isHovered ? 600 : 400 }}
+                  fill="hsl(0 0% 70%)"
+                  fontSize="10"
+                  opacity={isHovered ? 1 : 0.6}
+                  className="pointer-events-none select-none"
+                  style={{ fontFamily: 'Inter, sans-serif' }}
                 >
-                  {node.item.title.length > 20 
-                    ? node.item.title.substring(0, 18) + "..." 
+                  {node.item.title.length > 25 
+                    ? node.item.title.substring(0, 22) + "..." 
                     : node.item.title}
-                </motion.text>
+                </text>
               </g>
             );
           })}
         </svg>
 
         <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-3">
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-accent" />
-              <span>Item node</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-px bg-foreground/30" />
-              <span>Shared tags</span>
-            </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {uniqueTags.map((tag) => (
+              <div key={tag} className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: getTagColor(tag) }}
+                />
+                <span className="text-xs text-muted-foreground">{tag}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -268,7 +359,8 @@ export function KnowledgeGraph() {
               {hoveredNode.tags.slice(0, 4).map((tag) => (
                 <span
                   key={tag}
-                  className="px-2 py-0.5 text-[10px] rounded-full bg-accent/20 text-accent-foreground"
+                  className="px-2 py-0.5 text-[10px] rounded-full"
+                  style={{ backgroundColor: `${getTagColor(tag)}30`, color: getTagColor(tag) }}
                 >
                   {tag}
                 </span>
