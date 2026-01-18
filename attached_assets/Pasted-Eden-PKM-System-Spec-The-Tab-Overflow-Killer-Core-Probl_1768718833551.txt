@@ -1,0 +1,1085 @@
+Eden: PKM System Spec
+The Tab Overflow Killer
+Core Problem
+People accumulate 50+ tabs, 1000+ bookmarks, scattered notes across apps. Nothing surfaces the right information at the right time. Matter died. Raindrop is just organized hoarding. We need something that actually thinks.
+The Big Idea
+Eden is your second brain that learns what matters to you. One-click save from anywhere → AI automatically categorizes, extracts insights, surfaces connections, and reminds you of relevant content when you need it.
+
+Feature Set (32-hour MVP)
+1. Universal Capture
+
+Browser extension: One-click save (tab, selection, or full page)
+Auto-save: Option to automatically capture all tabs at end of day
+Multi-format support: Web pages, PDFs, tweets, YouTube videos (transcript extraction)
+Mobile share sheet: Save from phone apps
+
+2. Intelligent Organization (The Magic)
+
+Auto-tagging: AI categorizes content by topic, intent (read later, reference, inspiration, tutorial)
+Smart collections: Automatically groups related content ("React performance optimization", "Startup marketing tactics")
+Temporal awareness: Separates ephemeral content (news, deals) from evergreen (how-tos, research)
+Duplicate detection: "You saved this 3 times already" with merge option
+
+3. Knowledge Graph
+
+Concept extraction: Pull out key ideas, people, companies, technologies mentioned
+Connection mapping: "This article relates to 3 other things you saved about YC application advice"
+Visual graph view: See how your saved content clusters and connects
+
+4. Proactive Resurfacing (The Killer Feature)
+
+Context-aware suggestions: Writing an email about pricing? Eden surfaces that SaaS pricing article you saved 2 months ago
+Smart digests: Weekly "Here's what you saved but never read, organized by priority"
+Scheduled reminders: "Review your saved fundraising materials in 3 months when you're ready"
+Chat interface: "What have I saved about Next.js server components?"
+
+5. Powerful Search
+
+Natural language: "That thread about founder burnout from someone at Stripe"
+Semantic search: Finds conceptually similar content, not just keyword matches
+Filter by: date, domain, tag, collection, read/unread status
+Saved searches: Create persistent queries like "Unread marketing articles from last month"
+
+6. Tab Management Integration
+
+Tab graveyard: Save all tabs, close them, resurrect later with context
+Session snapshots: Capture entire browsing sessions ("Research for SF trip", "Fundraise prep")
+Smart restore: "Open all my ML research tabs" across multiple windows
+
+7. Minimalist Reading Experience
+
+Clean reader mode: Distraction-free article view
+Highlights & notes: Annotate with keyboard shortcuts
+TTS integration: Listen to articles
+Progress tracking: Pick up where you left off
+
+
+UX Principles
+Speed above all: Capture must be <2 clicks. Search must feel instant.
+Invisible intelligence: AI works behind the scenes. Users shouldn't think about tagging or organizing.
+Trust through transparency: Show WHY Eden suggests connections or collections.
+Beautiful constraints: Limited color palette, generous whitespace, focus on typography.
+
+Technical Architecture (32-hour version)
+Frontend
+
+React (Replit deployment)
+Tailwind for styling
+Recharts for knowledge graph visualization
+Chrome Extension (manifest v3)
+
+Backend
+
+In-memory storage for demo (use React state + context)
+Claude API for:
+
+Content summarization
+Tag generation
+Concept extraction
+Semantic search
+Connection finding
+
+
+
+Data Model
+javascript{
+  id: string,
+  url: string,
+  title: string,
+  content: string, // extracted text
+  summary: string, // AI-generated
+  tags: string[], // AI-generated
+  concepts: string[], // extracted entities/ideas
+  savedAt: timestamp,
+  lastAccessed: timestamp,
+  readingProgress: number, // 0-100
+  notes: string,
+  highlights: [{text, position}],
+  connections: [id], // related saved items
+  intent: 'read_later' | 'reference' | 'inspiration' | 'tutorial',
+  expiresAt: timestamp | null // for ephemeral content
+}
+
+The 32-Hour Build Plan
+Hours 1-6: Core Capture (Day 1, 11am-5pm)
+
+Basic React app with URL input
+Claude API integration for content extraction
+Auto-tagging and summarization working
+Simple list view of saved items
+
+Hours 7-12: Intelligence Layer (Day 1, 5pm-11pm)
+
+Concept extraction from content
+Connection finding algorithm
+Collections auto-generation
+Knowledge graph visualization (basic)
+
+Hours 13-20: The Magic Features (Day 1, 11pm - Day 2, 9am)
+
+Context-aware search with Claude
+"What should I read next?" recommendation engine
+Smart digests generation
+Chat interface for querying your saves
+
+Hours 21-28: Polish & Demo Prep (Day 2, 9am-5pm)
+
+Beautiful UI refinement
+Demo data set (curate 50+ diverse saves)
+Chrome extension (simplified: just content capture)
+Recording of key workflows
+
+Hours 29-32: Presentation (Day 2, 5pm-9pm)
+
+Live demo script
+Backup recordings
+Pitch deck (problem → solution → demo → vision)
+Build-in-public final post with metrics
+
+
+Demo Flow (The Pitch)
+Setup (30 seconds):
+"I have 73 tabs open right now. By Sunday I'll have 150. Sound familiar?"
+The Problem (45 seconds):
+"We're drowning in information. Bookmarks are where tabs go to die. We save everything and find nothing. Matter tried to fix this and shut down. Raindrop is just organized hoarding."
+The Solution (2 minutes):
+[Live demo]
+
+Show chaotic browser with 50+ tabs
+One-click → all tabs saved to Eden, browser cleared
+Ask Eden: "What did I save about React performance?"
+Shows semantic results with connections to other saved content
+Click into article → clean reader, highlights, AI summary
+Knowledge graph view → watch concepts cluster
+"What should I read this weekend?" → AI curates 5 articles based on your interests and time saved
+
+The Vision (30 seconds):
+"Eden doesn't just store your information. It understands it, connects it, and surfaces it exactly when you need it. Your second brain that actually works."
+
+Why Eden Wins
+10x Tool Track: Solves universal daily pain. Every judge has this problem RIGHT NOW.
+Best Designed Track: Minimalist, fast, beautiful. Makes information management feel zen.
+Unique Use Case: Novel application of AI for personal knowledge—not just chat, actual intelligent curation.
+Built In Public Prize: Track metrics: "Saved 847 items, closed 203 tabs, found 94 connections" → viral hook.
+Audience Favorite: Everyone in that room will want this immediately.
+
+Post-Hackathon Moat
+If this gets traction:
+
+Browser extension distribution (Chrome Web Store)
+Mobile apps (capture on the go)
+Team workspaces (shared knowledge bases)
+API access (connect to Notion, Obsidian, Roam)
+Premium tier: Advanced AI features, unlimited storage, API access ($10/mo)
+
+The judges see investment potential here. PKM is a proven category. You're making it actually intelligent.
+
+What I Need From You
+
+Are you building solo or with a team?
+What's your experience level with React/Claude API?
+Do you want me to start scaffolding the code structure now?
+
+Say the word and we'll build Eden into something that makes the judges want to immediately switch from their current system.I want you to devise a design system based on latest design paradigms like bento, dotted grids, scroll animations, whole image hero section, oversized footer text logo, and so on.10:35 PMEden Design System
+"Calm Abundance" — Clean, Modern, Obsessively Detailed
+
+Design Philosophy
+Eden makes chaos feel calm. The visual language should reflect information density without overwhelming—everything has space to breathe, yet feels rich and layered. Think: Stripe's polish meets Linear's precision meets Arc browser's playfulness.
+
+Color Palette
+Primary Colors
+css--eden-black: #0A0A0A;        /* Almost black, soft on eyes */
+--eden-white: #FAFAF9;        /* Warm white, not stark */
+--eden-sage: #6B9080;         /* Primary brand - muted sage green */
+--eden-sage-light: #A4C3B2;   /* Hover states */
+--eden-sage-dark: #4A6B5E;    /* Active states */
+Accent Colors
+css--eden-amber: #F2A365;        /* Warnings, highlights */
+--eden-slate: #64748B;        /* Secondary text */
+--eden-slate-light: #94A3B8;  /* Tertiary text */
+--eden-mist: #F1F5F9;         /* Background layers */
+--eden-glass: rgba(107, 144, 128, 0.08); /* Glassmorphism overlays */
+Semantic Colors
+css--eden-success: #10B981;      /* Saved confirmations */
+--eden-info: #3B82F6;         /* Connection indicators */
+--eden-warning: #F59E0B;      /* Expiring content */
+--eden-error: #EF4444;        /* Duplicates, errors */
+
+Typography
+Font Stack
+css--font-display: 'Instrument Serif', Georgia, serif;  /* Headlines, hero */
+--font-body: 'Inter Variable', system-ui, sans-serif; /* Body, UI */
+--font-mono: 'JetBrains Mono', 'Fira Code', monospace; /* Code, tags */
+Type Scale (Fluid Typography)
+css--text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+--text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+--text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+--text-lg: clamp(1.125rem, 1rem + 0.5vw, 1.5rem);
+--text-xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+--text-2xl: clamp(2rem, 1.5rem + 2.5vw, 3rem);
+--text-3xl: clamp(3rem, 2rem + 5vw, 5rem);
+--text-4xl: clamp(4rem, 3rem + 5vw, 7rem);
+Type Styles
+cssh1 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.02em; }
+h2, h3 { font-family: var(--font-body); font-weight: 600; letter-spacing: -0.01em; }
+body { font-family: var(--font-body); font-weight: 400; line-height: 1.6; }
+.mono { font-family: var(--font-mono); font-size: 0.9em; }
+
+Spacing System (8px Base)
+css--space-1: 0.5rem;   /* 8px */
+--space-2: 1rem;     /* 16px */
+--space-3: 1.5rem;   /* 24px */
+--space-4: 2rem;     /* 32px */
+--space-6: 3rem;     /* 48px */
+--space-8: 4rem;     /* 64px */
+--space-12: 6rem;    /* 96px */
+--space-16: 8rem;    /* 128px */
+--space-24: 12rem;   /* 192px */
+
+Grid System
+Dotted Grid Background
+css.dotted-grid {
+  background-image: 
+    radial-gradient(circle, rgba(107, 144, 128, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+}
+
+/* Alternative: Subtle mesh gradient */
+.mesh-gradient {
+  background: 
+    radial-gradient(at 20% 30%, rgba(107, 144, 128, 0.15) 0px, transparent 50%),
+    radial-gradient(at 80% 70%, rgba(242, 163, 101, 0.15) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(100, 116, 139, 0.1) 0px, transparent 50%);
+}
+Bento Grid Layout
+css.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+  grid-auto-rows: minmax(200px, auto);
+}
+
+/* Featured items span 2 columns */
+.bento-item-large {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+/* Square items */
+.bento-item-square {
+  aspect-ratio: 1;
+}
+
+Components
+Cards (Glassmorphism)
+css.card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(107, 144, 128, 0.2);
+  border-radius: 16px;
+  padding: var(--space-4);
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 20px 25px -5px rgba(107, 144, 128, 0.1);
+  border-color: var(--eden-sage-light);
+}
+
+/* Dark mode variant */
+.card-dark {
+  background: rgba(10, 10, 10, 0.7);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+Buttons
+css.btn {
+  font-family: var(--font-body);
+  font-weight: 500;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: var(--eden-sage);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--eden-sage-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(107, 144, 128, 0.3);
+}
+
+/* Animated gradient on hover */
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent, rgba(255,255,255,0.2), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.btn-primary:hover::before {
+  transform: translateX(100%);
+}
+Input Fields
+css.input {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid rgba(107, 144, 128, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--eden-sage);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(107, 144, 128, 0.1);
+}
+Tags (Pill Style)
+css.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--eden-glass);
+  border: 1px solid rgba(107, 144, 128, 0.2);
+  color: var(--eden-sage-dark);
+  transition: all 0.2s ease;
+}
+
+.tag:hover {
+  background: var(--eden-sage-light);
+  color: white;
+  border-color: var(--eden-sage);
+}
+
+Animations
+Scroll Animations (Using Intersection Observer)
+css/* Fade up on scroll */
+.fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.stagger-container > * {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.stagger-container.visible > *:nth-child(1) { animation: fadeUp 0.6s 0.1s forwards; }
+.stagger-container.visible > *:nth-child(2) { animation: fadeUp 0.6s 0.2s forwards; }
+.stagger-container.visible > *:nth-child(3) { animation: fadeUp 0.6s 0.3s forwards; }
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+Parallax Scroll Effect
+css.parallax {
+  transform: translateY(calc(var(--scroll) * 0.5px));
+}
+
+/* JavaScript to update --scroll custom property */
+// window.addEventListener('scroll', () => {
+//   document.documentElement.style.setProperty('--scroll', window.scrollY);
+// });
+Magnetic Cursor Effect (Advanced)
+css.magnetic-item {
+  transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* JavaScript handles mouse move to apply transform */
+Micro-interactions
+css/* Pulsing save indicator */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.95); }
+}
+
+.saving-indicator {
+  animation: pulse 1.5s infinite;
+}
+
+/* Shimmer loading */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--eden-mist) 0%,
+    rgba(255,255,255,0.8) 50%,
+    var(--eden-mist) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+Layout Patterns
+Hero Section (Full Height Image)
+css.hero {
+  height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hero-image {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(107, 144, 128, 0.9) 0%,
+    rgba(10, 10, 10, 0.7) 100%
+  );
+  z-index: 0;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+  max-width: 800px;
+  padding: var(--space-4);
+}
+
+.hero h1 {
+  font-size: var(--text-4xl);
+  margin-bottom: var(--space-4);
+  line-height: 1.1;
+}
+Oversized Footer Logo
+css.footer {
+  background: var(--eden-black);
+  color: var(--eden-white);
+  padding: var(--space-24) var(--space-4);
+  position: relative;
+  overflow: hidden;
+}
+
+.footer-logo {
+  font-family: var(--font-display);
+  font-size: clamp(8rem, 15vw, 20rem);
+  font-weight: 400;
+  line-height: 0.9;
+  color: rgba(255, 255, 255, 0.05);
+  position: absolute;
+  bottom: -0.2em;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.footer-content {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-8);
+}
+Bento Feature Grid
+html<div class="bento-grid">
+  <div class="bento-item bento-item-large card">
+    <!-- Featured: Knowledge Graph Visualization -->
+  </div>
+  <div class="bento-item card">
+    <!-- Smart Collections -->
+  </div>
+  <div class="bento-item card">
+    <!-- Context-Aware Search -->
+  </div>
+  <div class="bento-item bento-item-square card">
+    <!-- One-Click Save -->
+  </div>
+  <div class="bento-item card">
+    <!-- Auto-Tagging -->
+  </div>
+  <div class="bento-item bento-item-large card">
+    <!-- Reading Experience -->
+  </div>
+</div>
+```
+
+---
+
+## Page-Specific Designs
+
+### Landing Page Structure
+```
+1. Hero Section (100vh)
+   - Full-bleed image: Abstract knowledge graph visualization
+   - Centered headline: "Your second brain that actually works"
+   - Subhead: "Eden kills tab overflow. One click saves everything. AI finds it when you need it."
+   - CTA: "Try Eden Free" (large, prominent)
+   - Scroll indicator (animated)
+
+2. Problem Section (Scroll Animation)
+   - Fade-up animation reveals:
+     - "73 open tabs. 1,847 bookmarks. 0 found when needed."
+   - Bento grid showing chaos vs. Eden's calm
+
+3. Features Bento Grid
+   - 6-8 cards showcasing key features
+   - Hover effects reveal more detail
+   - Screenshots/animated demos in each card
+
+4. Knowledge Graph Demo (Interactive)
+   - Full-width canvas showing live connection mapping
+   - Click nodes to explore relationships
+   - Parallax background effect
+
+5. Testimonials (Horizontal Scroll)
+   - Cards slide horizontally on scroll
+   - Glassmorphic design
+
+6. CTA Section
+   - "Start organizing your chaos"
+   - Email capture form
+   - Social proof: "Join 1,000+ builders"
+
+7. Footer
+   - Oversized "EDEN" logo watermark
+   - Links, social, newsletter
+   - Dotted grid background
+
+Dark Mode
+css@media (prefers-color-scheme: dark) {
+  :root {
+    --eden-black: #FAFAF9;
+    --eden-white: #0A0A0A;
+    --eden-mist: #1A1A1A;
+    --eden-glass: rgba(107, 144, 128, 0.12);
+  }
+  
+  .card {
+    background: rgba(26, 26, 26, 0.7);
+    border-color: rgba(148, 163, 184, 0.15);
+  }
+  
+  .dotted-grid {
+    background-image: 
+      radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  }
+}
+
+Responsive Breakpoints
+css/* Mobile first approach */
+--breakpoint-sm: 640px;   /* Phones */
+--breakpoint-md: 768px;   /* Tablets */
+--breakpoint-lg: 1024px;  /* Laptops */
+--breakpoint-xl: 1280px;  /* Desktops */
+--breakpoint-2xl: 1536px; /* Large screens */
+
+Advanced Effects
+Noise Texture Overlay
+css.noise-overlay {
+  position: relative;
+}
+
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/></svg>');
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+Gradient Borders
+css.gradient-border {
+  position: relative;
+  border-radius: 16px;
+  background: var(--eden-white);
+  padding: 2px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, var(--eden-sage), var(--eden-amber));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+Scroll Progress Bar
+css.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--eden-sage), var(--eden-amber));
+  transform-origin: left;
+  transform: scaleX(var(--scroll-progress, 0));
+  z-index: 9999;
+}
+
+/* JavaScript updates --scroll-progress based on scroll position */
+
+Implementation Checklist
+
+ Set up CSS custom properties
+ Import Inter Variable and Instrument Serif fonts
+ Create base component library (Button, Card, Input, Tag)
+ Build responsive grid system
+ Implement dotted grid background
+ Add scroll intersection observer for animations
+ Create hero section with full-image background
+ Build bento grid for features
+ Design oversized footer logo
+ Add glassmorphism effects to cards
+ Implement dark mode toggle
+ Test all animations for performance
+ Optimize for mobile (touch interactions)
+
+
+This design system makes Eden feel premium, modern, and trustworthy. Every detail—from the muted sage green to the serif headlines to the glass cards—signals: "This is where your information belongs."
+Ready to start building the actual components?The screenshot shows Replit's Connectors page (likely under your workspace or Agent settings). These are team-shared, first-party integrations that let you (and your team) connect external services/APIs/databases without managing individual credentials each time—perfect for building something like ypastedConsider this: paste. I don't know what we're building. Also consider those designs:10:40 PMLet's Build the Winner
+Looking at your context + those design references (Paper's dark elegance, Micro's spatial depth, clean typography), here's what we're building:
+
+EDEN
+"Your second brain that actually works"
+Why Eden Wins Tonight
+
+You have 12-15 hours left — Eden is achievable, shippable, demo-able
+Universal pain point — Every judge has 73 tabs open RIGHT NOW
+Perfect for Replit connectors — Google Drive, Gmail, Calendar integration for "intelligent capture"
+Design = differentiator — Those references show what separates good from unforgettable
+Multiple prize tracks:
+
+10x Tool Track ($5K + $25K investment potential)
+Best Designed Track ($5K) — if we nail the aesthetics
+Built In Public ($500 + AirPods) — document the chaos-to-calm journey
+
+
+
+
+The Build Plan (Next 12 Hours)
+Phase 1: Foundation (2 hours) — 10pm-12am
+What we're building:
+
+React app on Replit
+Basic UI shell with that Paper-inspired dark aesthetic
+URL input that captures content
+Claude API integration for summarization
+
+Design direction from those screenshots:
+
+Dark mode default (Paper's deep blacks)
+Spatial depth (Micro's floating elements, subtle shadows)
+Oversized typography (Paper's "make it real" footer)
+Generous whitespace (breathing room)
+Subtle animations (floating orbs, scroll parallax)
+
+Phase 2: The Magic (4 hours) — 12am-4am
+Core features:
+
+Auto-tagging with AI
+Concept extraction (entities, topics, themes)
+Connection mapping (this relates to that)
+Simple knowledge graph visualization
+Search with semantic understanding
+
+Connector integration:
+
+Google Drive: "Import all my saved articles from Drive"
+Gmail: "Pull links from starred emails"
+(Fallback to manual upload if connectors need admin enable)
+
+Phase 3: Polish & Wow Factor (4 hours) — 4am-8am
+Visual elevation:
+
+Dotted grid background
+Glassmorphic cards
+Scroll-triggered animations
+Bento grid for features section
+Interactive knowledge graph demo
+Smooth micro-interactions
+
+Phase 4: Demo Prep (2 hours) — 8am-10am
+
+Curate 50+ diverse saves (articles, videos, tweets, docs)
+Record demo video showing full workflow
+Prepare live demo script
+Build-in-public final post with metrics
+Screenshot gallery for presentation
+
+
+Design System (Based on Your References)
+Color Palette
+css--eden-black: #0A0A0A;        /* Paper's deep black */
+--eden-white: #FAFAF9;        /* Warm, not stark */
+--eden-sage: #6B9080;         /* Primary - muted, trustworthy */
+--eden-glass: rgba(255,255,255,0.05); /* Micro's floating panels */
+Typography
+css--font-display: 'Instrument Serif';   /* Paper's elegance */
+--font-body: 'Inter Variable';        /* Micro's clarity */
+```
+
+### Key Visual Elements
+
+**1. Hero Section** (Paper inspiration)
+- Full viewport height
+- Floating 3D orbs (Micro style) in background
+- Center headline: "Your second brain that actually works"
+- Subtle particle effects on scroll
+
+**2. Bento Feature Grid**
+- Glassmorphic cards
+- Hover states reveal depth
+- Each card showcases one feature with mini demo
+
+**3. Knowledge Graph Demo** (Interactive centerpiece)
+- Full-width canvas
+- Nodes represent saved content
+- Lines show connections
+- Click/drag to explore
+- Real-time as you save content
+
+**4. Oversized Footer** (Paper's "make it real")
+- Massive "EDEN" wordmark in background
+- Subtle, not overwhelming
+- Links and info overlay
+
+---
+
+## The Demo Flow
+
+**Opening (30 seconds):**
+> "I have 73 tabs open. By Sunday I'll have 150. We're drowning in information."
+
+**Problem (30 seconds):**
+> [Show chaotic browser]
+> "Bookmarks are where tabs go to die. Matter shut down. Raindrop is organized hoarding. We save everything and find nothing."
+
+**Solution (2 minutes):**
+> [Live demo]
+> 1. One-click save all tabs → browser clears
+> 2. Eden shows: auto-tagged, summarized, connected
+> 3. Ask: "What did I save about AI agents?"
+> 4. Semantic search returns relevant results
+> 5. Show knowledge graph connecting related concepts
+> 6. "What should I read this weekend?" → AI curates 5 articles
+
+**Vision (30 seconds):**
+> "Eden doesn't just store information. It understands it, connects it, surfaces it when you need it. Your second brain that actually works."
+
+---
+
+## The Code Structure
+
+I'll scaffold this for you right now. Here's what we're building:
+```
+eden/
+├── src/
+│   ├── App.jsx           # Main app shell
+│   ├── components/
+│   │   ├── Hero.jsx      # Landing hero with orbs
+│   │   ├── SaveInput.jsx # URL capture
+│   │   ├── SavedItems.jsx # Grid of saved content
+│   │   ├── KnowledgeGraph.jsx # Visual connections
+│   │   ├── Search.jsx    # Semantic search
+│   │   └── Footer.jsx    # Oversized logo
+│   ├── hooks/
+│   │   ├── useClaudeAPI.js # AI summarization
+│   │   └── useConnectors.js # Google integrations
+│   └── styles/
+│       └── globals.css   # Design system
+```
+
+---
+
+## Start Now — Here's Your First Prompt
+
+Paste this into Replit Agent:
+```
+Create a React app called "Eden" - a personal knowledge management system.
+
+CORE FEATURES:
+1. URL input to save web content
+2. Use Claude API (Sonnet 4) to:
+   - Extract main content from URLs
+   - Generate summaries
+   - Auto-tag with topics
+   - Extract key concepts/entities
+3. Display saved items in a bento grid layout
+4. Implement semantic search
+5. Visualize connections between saved content
+
+DESIGN REQUIREMENTS:
+- Dark mode default (#0A0A0A background)
+- Glassmorphic cards with backdrop-filter blur
+- Use Inter Variable for body, Instrument Serif for headlines
+- Dotted grid background pattern
+- Smooth scroll animations
+- Responsive bento grid (auto-fit, minmax 280px)
+
+TECH STACK:
+- React with hooks
+- Tailwind CSS
+- Recharts for knowledge graph
+- Claude API for AI features
+- Store data in React state (no localStorage)
+
+Start with the basic structure and save/display functionality.
+
+Why This Wins
+Judges see:
+
+Real pain solved — They experience this daily
+AI done right — Not just chatbots, actual intelligent organization
+Design excellence — Looks like a $100M product
+Immediate utility — They want to use it NOW
+Investment potential — Clear path to $10/mo SaaS
+
+Audience sees:
+
+Relatable demo — "That's me!"
+Magical UX — Watching chaos become calm
+Shareable — They'll tweet screenshots
+
+
+Your Next Steps
+
+Open Replit → New React app
+Paste that prompt into Agent
+Share the Repl link with me
+I'll guide you through iterations in real-time
+
+You have the time. You have the tools. You have Replit connectors. You have the design references.
+Let's make Eden real.
+Type "let's go" and drop the Repl link when you've got the shell running. I'll help you turn this into something that makes judges lean forward in their seats.
+🌿 Eden awaits.What does Eden even do?10:45 PMWhat Eden Actually Does (In Plain English)
+You know how you:
+
+Have 50+ browser tabs open right now?
+Bookmark things you'll "read later" but never do?
+Save articles to 5 different apps and forget which one?
+Search your bookmarks and can't find that ONE thing you need?
+Rediscover the same article 3 times because you forgot you saved it?
+
+Eden fixes that.
+
+What Eden Does (The Simple Version)
+1. One-Click Save Everything
+
+Click Eden extension → saves the page
+Paste a URL → saves it
+Drag a file → saves it
+End of day: "Save all my tabs" → clears your browser
+
+2. AI Organizes It Automatically
+You don't do anything. Eden:
+
+Reads the content
+Summarizes it (2-3 sentences)
+Tags it ("React tutorial", "startup advice", "design inspiration")
+Extracts key concepts (people mentioned, technologies, ideas)
+Figures out what it's related to
+
+3. Finds It When You Need It
+Instead of scrolling through 1,000 bookmarks:
+
+Ask naturally: "That article about pricing strategy from the YC founder"
+AI understands meaning: Finds it even if you don't remember exact words
+Shows connections: "This relates to 3 other things you saved about fundraising"
+
+4. Surfaces What Matters
+
+Weekly digest: "Here are the 5 most important things you saved but haven't read"
+Context-aware: Writing a pitch deck? Eden suggests your saved fundraising materials
+Proactive reminders: "You saved this 3 months ago and said to review it before Q2"
+
+
+Real Usage Examples
+Example 1: Research Mode
+You: Building a new feature, need to research React Server Components
+Without Eden:
+
+Google → 15 tabs open
+Bookmark a few
+Close tabs
+Week later: "Where was that good article?"
+Give up, Google again
+
+With Eden:
+
+Save 15 articles with one click
+Eden auto-tags them all as "React", "Server Components", "Performance"
+Creates a collection: "React Server Components Research"
+Later: Ask "Show me everything about React Server Components"
+Eden shows all 15, sorted by relevance, with summaries
+Click one → picks up where you left off
+
+Example 2: Learning Mode
+You: Want to learn about startup growth tactics
+Without Eden:
+
+Save random articles over months
+Scattered across bookmarks, Pocket, screenshots, notes
+No idea what you have
+Start from scratch each time
+
+With Eden:
+
+Passively saves growth articles as you find them
+AI notices the pattern, creates "Growth Tactics" collection
+Extracts common themes across articles
+Shows you: "You've saved 23 articles about growth. Main themes: content marketing (8), SEO (6), partnerships (5), community building (4)"
+Suggests: "Start with these 3 foundational pieces"
+
+Example 3: Work Context
+You: In a meeting, someone mentions "that API pricing comparison we looked at"
+Without Eden:
+
+"Uh... was that in Slack?"
+"Or maybe someone emailed it?"
+"Let me search... nope, not finding it"
+Awkward silence
+
+With Eden:
+
+Pull out phone
+Ask: "API pricing comparison"
+Eden finds it instantly (was saved 2 weeks ago from a Twitter thread)
+You look prepared
+
+
+The Core Insight
+Most "read later" apps are just organized graveyards.
+They make it easier to SAVE stuff, but you still never FIND it or USE it.
+Eden is different because:
+
+It understands what you saved (not just the title/URL)
+It connects related ideas automatically
+It reminds you proactively
+It adapts to how you actually work
+
+
+Technical Magic (Under the Hood)
+When you save something, Eden:
+
+Extracts the content (full text, images, metadata)
+Sends to Claude API with prompt like:
+
+   Analyze this article. Provide:
+   - 2-3 sentence summary
+   - 5-7 topic tags
+   - Key concepts/entities mentioned
+   - Main argument/thesis
+   - Practical takeaways
+
+Stores everything with rich metadata
+Builds a knowledge graph connecting related items
+Indexes semantically so search understands meaning, not just keywords
+
+When you search:
+
+Your query → Claude API
+Claude finds conceptually similar content
+Returns ranked results with explanations: "This matches because..."
+
+
+Why It Wins the Hackathon
+Judges' perspective:
+
+Universal pain: Every single person in that room has this problem
+AI done right: Not a chatbot, actual intelligent organization
+Immediate value: They'd switch to it TODAY
+Clear moat: The knowledge graph + proactive surfacing is hard to replicate
+
+Demo impact:
+
+Before: Show browser with 73 tabs, chaotic bookmarks
+Save everything: One click, browser clears
+The magic: Ask complex question, get instant answer
+Knowledge graph: Visual "wow" moment showing connections
+After: Calm, organized, everything findable
+
+
+The Pitch (30 seconds)
+
+"You have 73 open tabs. I have 73 open tabs. We all do.
+We bookmark things we'll 'read later' but never do. We save to 5 different apps and can't find anything.
+Eden kills tab overflow.
+One click saves everything. AI organizes it automatically. Semantic search finds it when you need it. Your knowledge graph shows how ideas connect.
+It's not another bookmark app. It's your second brain that actually works."
+
+
+Does This Actually Solve a Real Problem?
+Yes. Here's proof:
+
+Matter (YC-backed, $4M raised) tried this → shut down in 2023 → validation of PROBLEM, but they focused on reading experience not knowledge management
+Raindrop.io has 5M+ users → people desperately want this
+Notion/Obsidian users build complex systems → demand for "second brain"
+Arc browser added "Spaces" for tab management → 2M+ downloads
+
+The gap: None of them combine:
+
+Effortless capture (Eden)
+AI organization (Eden)
+Semantic search (Eden)
+Proactive surfacing (Eden)
+Knowledge graph (Eden)
+
+
+So What Does Eden Do?
+Eden saves everything you find interesting, organizes it automatically with AI, and surfaces the right information at the right time.
+It's the difference between:
+
+Digital hoarding (current state)
+Curated knowledge (Eden state)
+
+You never think about organizing. You never wonder where something is. You just save and trust that Eden will help you find it when you need it.
+That's Eden.
+
+Want me to start building it? Say "yes" and I'll create the first version right now in an artifact.
