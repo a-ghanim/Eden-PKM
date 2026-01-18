@@ -497,4 +497,97 @@
     mask-image: radial-gradient(ellipse 80% 70% at center, black 40%, transparent 100%);
     -webkit-mask-image: radial-gradient(ellipse 80% 70% at center, black 40%, transparent 100%);
   }
+
+  /* Animated Gradient Text */
+  .animated-gradient-text {
+    background: linear-gradient(
+      90deg,
+      #c9a0dc,
+      #e8a87c,
+      #85c1e9,
+      #45b39d,
+      #f5d76e,
+      #c9a0dc
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-shift 6s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Animated Gradient Border Button */
+  .gradient-border-button {
+    position: relative;
+    background: hsl(var(--background));
+    z-index: 1;
+  }
+
+  .gradient-border-button::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    padding: 2px;
+    background: linear-gradient(
+      90deg,
+      #c9a0dc,
+      #e8a87c,
+      #85c1e9,
+      #45b39d,
+      #f5d76e,
+      #c9a0dc
+    );
+    background-size: 300% 100%;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    z-index: -1;
+    animation: gradient-shift 6s ease infinite;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+  }
+
+  .gradient-border-button:hover::before {
+    opacity: 1;
+  }
+
+  /* Animated Gradient Fill Button */
+  .gradient-fill-button {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .gradient-fill-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      #c9a0dc,
+      #e8a87c,
+      #85c1e9,
+      #45b39d,
+      #f5d76e,
+      #c9a0dc
+    );
+    background-size: 300% 100%;
+    z-index: -1;
+    animation: gradient-shift 6s ease infinite;
+    opacity: 0.85;
+    transition: opacity 0.3s ease;
+  }
+
+  .gradient-fill-button:hover::before {
+    opacity: 1;
+  }
 }

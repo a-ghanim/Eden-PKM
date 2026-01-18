@@ -68,7 +68,7 @@ export default function LandingPage() {
             >
               Remember
               <br />
-              everything.
+              <span className="italic animated-gradient-text">everything.</span>
             </motion.h1>
 
             {/* Subheadline */}
@@ -94,7 +94,7 @@ export default function LandingPage() {
               <Link href="/" data-testid="link-get-started">
                 <Button 
                   size="lg" 
-                  className="h-14 px-8 text-lg rounded-xl bg-white text-black hover:bg-white/90 gap-2"
+                  className="h-14 px-8 text-lg rounded-full gradient-fill-button text-black font-medium gap-2"
                   data-testid="button-get-started"
                 >
                   Get Started
@@ -102,9 +102,9 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 size="lg" 
-                className="h-14 px-8 text-lg rounded-xl border-white/30 text-white hover:bg-white/10 backdrop-blur-sm"
+                className="h-14 px-8 text-lg rounded-full gradient-border-button text-white border-0"
                 data-testid="button-learn-more"
               >
                 Learn More
