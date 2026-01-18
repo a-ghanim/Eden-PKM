@@ -14,6 +14,7 @@ import {
   Upload,
   FileUp,
   Bookmark,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -160,6 +161,12 @@ export function AppSidebar() {
           <Link href="/settings" data-testid="link-settings">
             <Settings className="w-4 h-4" />
             <span>Settings</span>
+          </Link>
+        </SidebarMenuButton>
+        <SidebarMenuButton asChild className="rounded-xl">
+          <Link href="/landing" data-testid="button-logout">
+            <LogOut className="w-4 h-4" />
+            <span>Log out</span>
           </Link>
         </SidebarMenuButton>
       </SidebarFooter>

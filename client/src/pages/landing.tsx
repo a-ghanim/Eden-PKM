@@ -14,54 +14,6 @@ import { Button } from "@/components/ui/button";
  * --ar 16:9 --v 6 --style raw --s 250"
  */
 
-const floatAnimation = {
-  y: [0, -10, 0],
-  transition: {
-    duration: 3,
-    repeat: Infinity,
-    ease: "easeInOut",
-  },
-};
-
-const floatAnimationSlow = {
-  y: [0, -15, 0],
-  transition: {
-    duration: 4,
-    repeat: Infinity,
-    ease: "easeInOut",
-  },
-};
-
-const floatAnimationFast = {
-  y: [0, -8, 0],
-  transition: {
-    duration: 2.5,
-    repeat: Infinity,
-    ease: "easeInOut",
-  },
-};
-
-function FloatingShape({ 
-  className, 
-  delay = 0 
-}: { 
-  className?: string; 
-  delay?: number;
-}) {
-  return (
-    <motion.div
-      className={className}
-      animate={{ y: [0, -12, 0], rotate: [0, 5, 0] }}
-      transition={{
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut",
-        delay,
-      }}
-    />
-  );
-}
-
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
@@ -77,20 +29,6 @@ export default function LandingPage() {
         {/* Dark gradient overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/50" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-        
-        {/* Floating decorative shapes */}
-        <FloatingShape 
-          className="absolute top-20 right-20 w-24 h-24 rounded-full bg-accent/20 blur-2xl"
-          delay={0}
-        />
-        <FloatingShape 
-          className="absolute bottom-40 right-40 w-32 h-32 rounded-full bg-primary/10 blur-3xl"
-          delay={1}
-        />
-        <FloatingShape 
-          className="absolute top-1/3 right-1/4 w-16 h-16 rounded-full bg-accent/30 blur-xl"
-          delay={0.5}
-        />
 
         {/* Content */}
         <div className="relative z-10 container mx-auto px-8 md:px-16 lg:px-24">
@@ -198,28 +136,16 @@ export default function LandingPage() {
           </p>
         </motion.div>
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[240px]" data-testid="container-bento-grid">
+        {/* Bento Grid - Responsive stacking */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="container-bento-grid">
           {/* Large card - Capture */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative col-span-1 md:col-span-2 row-span-2 rounded-3xl bg-gradient-to-br from-accent/20 to-accent/5 border border-border/50 p-8 overflow-hidden hover-elevate"
+            className="relative sm:col-span-2 lg:row-span-2 rounded-3xl bg-gradient-to-br from-accent/20 to-accent/5 border border-border/50 p-8 hover-elevate"
           >
-            <motion.div
-              animate={floatAnimation}
-              className="absolute -right-8 -bottom-8 w-48 h-48 rounded-full bg-accent/20 blur-3xl"
-            />
-            <motion.div
-              animate={floatAnimationSlow}
-              className="absolute right-16 top-16 w-20 h-20 rounded-2xl bg-accent/30 rotate-12"
-            />
-            <motion.div
-              animate={floatAnimationFast}
-              className="absolute right-32 bottom-24 w-12 h-12 rounded-xl bg-accent/20 -rotate-6"
-            />
             <div className="relative z-10">
               <div className="w-14 h-14 rounded-2xl bg-accent/20 flex items-center justify-center mb-6">
                 <Zap className="w-7 h-7 text-accent" />
@@ -238,16 +164,8 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="relative col-span-1 row-span-1 rounded-3xl bg-card border border-border/50 p-6 overflow-hidden hover-elevate"
+            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate"
           >
-            <motion.div
-              animate={floatAnimationSlow}
-              className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-primary/10 blur-2xl"
-            />
-            <motion.div
-              animate={floatAnimation}
-              className="absolute right-8 bottom-4 w-8 h-8 rounded-lg bg-primary/20 rotate-45"
-            />
             <div className="relative z-10">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                 <Brain className="w-6 h-6 text-primary" />
@@ -265,20 +183,8 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="relative col-span-1 row-span-1 rounded-3xl bg-card border border-border/50 p-6 overflow-hidden hover-elevate"
+            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate"
           >
-            <motion.div
-              animate={floatAnimationFast}
-              className="absolute -left-4 -bottom-4 w-20 h-20 rounded-full bg-accent/15 blur-xl"
-            />
-            <motion.div
-              animate={floatAnimationSlow}
-              className="absolute right-4 top-12 w-6 h-6 rounded-full bg-accent/30"
-            />
-            <motion.div
-              animate={floatAnimation}
-              className="absolute right-12 top-8 w-4 h-4 rounded-full bg-accent/20"
-            />
             <div className="relative z-10">
               <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
                 <Network className="w-6 h-6 text-accent" />
@@ -296,16 +202,8 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="relative col-span-1 row-span-1 rounded-3xl bg-card border border-border/50 p-6 overflow-hidden hover-elevate"
+            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate"
           >
-            <motion.div
-              animate={floatAnimation}
-              className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-primary/10 blur-2xl"
-            />
-            <motion.div
-              animate={floatAnimationFast}
-              className="absolute left-1/2 bottom-6 w-10 h-10 rounded-xl bg-primary/15 -rotate-12"
-            />
             <div className="relative z-10">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                 <Layers className="w-6 h-6 text-primary" />
@@ -323,16 +221,8 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="relative col-span-1 row-span-1 rounded-3xl bg-card border border-border/50 p-6 overflow-hidden hover-elevate"
+            className="relative rounded-3xl bg-card border border-border/50 p-6 hover-elevate"
           >
-            <motion.div
-              animate={floatAnimationSlow}
-              className="absolute -left-8 top-1/2 w-24 h-24 rounded-full bg-accent/10 blur-xl"
-            />
-            <motion.div
-              animate={floatAnimationFast}
-              className="absolute right-6 bottom-8 w-8 h-8 rounded-lg bg-accent/25 rotate-12"
-            />
             <div className="relative z-10">
               <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
                 <Search className="w-6 h-6 text-accent" />
@@ -350,29 +240,8 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="relative col-span-1 md:col-span-2 row-span-1 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 p-8 overflow-hidden hover-elevate"
+            className="relative sm:col-span-2 rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 border border-border/50 p-8 hover-elevate"
           >
-            {/* Animated graph nodes */}
-            <motion.div
-              animate={floatAnimation}
-              className="absolute right-20 top-8 w-4 h-4 rounded-full bg-primary/40"
-            />
-            <motion.div
-              animate={floatAnimationSlow}
-              className="absolute right-32 top-16 w-3 h-3 rounded-full bg-primary/30"
-            />
-            <motion.div
-              animate={floatAnimationFast}
-              className="absolute right-24 bottom-12 w-5 h-5 rounded-full bg-primary/35"
-            />
-            <motion.div
-              animate={floatAnimation}
-              className="absolute right-40 bottom-8 w-3 h-3 rounded-full bg-primary/25"
-            />
-            {/* Connection lines (decorative) */}
-            <div className="absolute right-20 top-10 w-12 h-[1px] bg-primary/20 rotate-45" />
-            <div className="absolute right-28 top-18 w-8 h-[1px] bg-primary/15 -rotate-12" />
-            
             <div className="relative z-10">
               <h3 className="font-serif text-2xl mb-2">Knowledge Graph</h3>
               <p className="text-muted-foreground max-w-md">
@@ -385,31 +254,31 @@ export default function LandingPage() {
 
       {/* Oversized Wordmark Footer */}
       <footer className="py-24 px-8 md:px-16 lg:px-24 border-t border-border/30">
-        <div className="flex flex-col items-start gap-12">
+        <div className="flex flex-col gap-8">
+          {/* Footer content - above the wordmark */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+              <p className="text-muted-foreground mb-1">Your second brain, powered by AI.</p>
+              <p className="text-muted-foreground/60 text-sm">&copy; 2026 Eden. All rights reserved.</p>
+            </div>
+            <div className="flex gap-8">
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">Privacy</a>
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-terms">Terms</a>
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-twitter">Twitter</a>
+            </div>
+          </div>
+          
           {/* Oversized eden wordmark */}
           <motion.h2
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 1 }}
-            className="font-serif text-[12rem] md:text-[16rem] lg:text-[20rem] leading-[0.8] -ml-4 text-foreground/10 select-none"
+            className="font-serif text-[8rem] sm:text-[12rem] md:text-[16rem] lg:text-[20rem] leading-[0.8] -ml-2 md:-ml-4 text-foreground/10 select-none"
             data-testid="text-footer-wordmark"
           >
             eden
           </motion.h2>
-          
-          {/* Footer content */}
-          <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-end gap-8 -mt-16 md:-mt-24">
-            <div className="relative z-10">
-              <p className="text-muted-foreground mb-2">Your second brain, powered by AI.</p>
-              <p className="text-muted-foreground/60 text-sm">&copy; 2026 Eden. All rights reserved.</p>
-            </div>
-            <div className="relative z-10 flex gap-8">
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-privacy">Privacy</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-terms">Terms</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-twitter">Twitter</a>
-            </div>
-          </div>
         </div>
       </footer>
     </div>
