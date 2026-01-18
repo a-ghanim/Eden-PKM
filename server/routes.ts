@@ -58,14 +58,27 @@ async function extractContentFromFile(buffer: Buffer, filename: string, mimetype
   
   if (mimetype === "application/pdf" || ext === "pdf") {
     try {
+      console.log(`[PDF] Parsing PDF: ${filename}, size: ${buffer.length} bytes`);
       const data = await pdfParse(buffer);
       const title = filename.replace(/\.pdf$/i, "");
+      const textContent = data.text?.trim() || "";
+      console.log(`[PDF] Extracted ${textContent.length} characters from ${filename}`);
+      
+      if (textContent.length === 0) {
+        console.log(`[PDF] Warning: No text extracted from ${filename} - may be image-based or encrypted`);
+        return {
+          title,
+          content: `[PDF document: ${filename}. This PDF may be image-based or encrypted - no text could be extracted.]`,
+        };
+      }
+      
       return {
         title,
-        content: data.text.slice(0, 50000),
+        content: textContent.slice(0, 50000),
       };
     } catch (error) {
-      throw new Error("Failed to parse PDF file");
+      console.error(`[PDF] Error parsing ${filename}:`, error);
+      throw new Error(`Failed to parse PDF file: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
   
@@ -753,8 +766,21 @@ export async function registerRoutes(
         return;
       }
 
+      console.log(`[Upload] Processing ${files.length} file(s)`);
+      
       for (const file of files) {
-        const extracted = await extractContentFromFile(file.buffer, file.originalname, file.mimetype);
+        console.log(`[Upload] Processing file: ${file.originalname}, size: ${file.size}, type: ${file.mimetype}`);
+        
+        let extracted;
+        try {
+          extracted = await extractContentFromFile(file.buffer, file.originalname, file.mimetype);
+          console.log(`[Upload] Extracted content from ${file.originalname}: ${extracted.content.length} chars, isBookmarks: ${extracted.isBookmarks}`);
+        } catch (extractError) {
+          console.error(`[Upload] Failed to extract content from ${file.originalname}:`, extractError);
+          sendEvent({ type: "error", message: `Failed to read file: ${extractError instanceof Error ? extractError.message : "Unknown error"}` });
+          sendEvent({ type: "complete", success: 0, failed: 1, total: 1 });
+          continue;
+        }
         
         if (extracted.isBookmarks && extracted.bookmarkUrls && extracted.bookmarkUrls.length > 0) {
           const bookmarks = extracted.bookmarkUrls.slice(0, 100);
@@ -831,32 +857,47 @@ export async function registerRoutes(
           await Promise.all(bookmarks.map((b, i) => limit(() => processBookmark(b, i))));
           sendEvent({ type: "complete", success: successCount, failed: failCount, total: bookmarks.length });
         } else {
+          console.log(`[Upload] Processing as regular file: ${file.originalname}`);
           sendEvent({ type: "start", total: 1, fileName: file.originalname });
           
-          const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
-          const fileUrl = `file://${encodeURIComponent(file.originalname)}`;
-          
-          const parseResult = insertSavedItemSchema.safeParse({ url: fileUrl });
-          if (!parseResult.success) {
-            sendEvent({ type: "error", message: "Invalid file" });
-            continue;
+          try {
+            console.log(`[Upload] Analyzing content with AI for ${file.originalname}...`);
+            const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
+            console.log(`[Upload] AI analysis complete for ${file.originalname}: tags=${analysis.tags.join(',')}`);
+            
+            const fileUrl = `file://${encodeURIComponent(file.originalname)}`;
+            
+            const parseResult = insertSavedItemSchema.safeParse({ url: fileUrl });
+            if (!parseResult.success) {
+              console.error(`[Upload] Invalid file URL for ${file.originalname}`);
+              sendEvent({ type: "error", message: "Invalid file", index: 0, progress: { success: 0, failed: 1, total: 1 } });
+              sendEvent({ type: "complete", success: 0, failed: 1, total: 1 });
+              continue;
+            }
+
+            const enrichedData = {
+              title: extracted.title,
+              content: extracted.content,
+              summary: analysis.summary,
+              tags: analysis.tags,
+              concepts: analysis.concepts,
+              domain: "local",
+              favicon: undefined,
+              imageUrl: undefined,
+              expiresAt: null,
+            };
+
+            console.log(`[Upload] Creating item for ${file.originalname}...`);
+            const newItem = await storage.createItem(userId, parseResult.data, enrichedData);
+            console.log(`[Upload] Successfully created item ${newItem.id} for ${file.originalname}`);
+            
+            sendEvent({ type: "item", index: 0, item: newItem, progress: { success: 1, failed: 0, total: 1 } });
+            sendEvent({ type: "complete", success: 1, failed: 0, total: 1 });
+          } catch (processError) {
+            console.error(`[Upload] Error processing ${file.originalname}:`, processError);
+            sendEvent({ type: "error", message: processError instanceof Error ? processError.message : "Processing failed", index: 0, progress: { success: 0, failed: 1, total: 1 } });
+            sendEvent({ type: "complete", success: 0, failed: 1, total: 1 });
           }
-
-          const enrichedData = {
-            title: extracted.title,
-            content: extracted.content,
-            summary: analysis.summary,
-            tags: analysis.tags,
-            concepts: analysis.concepts,
-            domain: "local",
-            favicon: undefined,
-            imageUrl: undefined,
-            expiresAt: null,
-          };
-
-          const newItem = await storage.createItem(userId, parseResult.data, enrichedData);
-          sendEvent({ type: "item", index: 0, item: newItem, progress: { success: 1, failed: 0, total: 1 } });
-          sendEvent({ type: "complete", success: 1, failed: 0, total: 1 });
         }
       }
       res.end();
