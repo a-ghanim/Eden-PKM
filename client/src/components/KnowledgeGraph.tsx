@@ -1,116 +1,89 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { ExternalLink, Globe } from "lucide-react";
 import { useEden } from "@/lib/store";
 import type { SavedItem } from "@shared/schema";
 
-interface GraphNode {
+interface NodePosition {
   id: string;
-  name: string;
-  type: "item" | "cluster";
   x: number;
   y: number;
-  z: number;
-  size: number;
-  color: string;
-  items?: SavedItem[];
-  tag?: string;
+  item: SavedItem;
 }
 
-interface Cluster {
-  name: string;
-  items: SavedItem[];
-  color: string;
+interface Connection {
+  source: string;
+  target: string;
+  sharedTags: string[];
 }
 
-const clusterColors = [
-  "hsl(160, 50%, 42%)",
+const nodeColors = [
+  "hsl(160, 50%, 45%)",
   "hsl(200, 70%, 50%)",
   "hsl(280, 60%, 55%)",
-  "hsl(45, 85%, 50%)",
+  "hsl(45, 85%, 55%)",
   "hsl(340, 70%, 55%)",
-  "hsl(120, 45%, 45%)",
   "hsl(30, 80%, 55%)",
 ];
 
 export function KnowledgeGraph() {
   const { items, setSelectedItem } = useEden();
-  const [hoveredCluster, setHoveredCluster] = useState<Cluster | null>(null);
-  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const [hoveredNode, setHoveredNode] = useState<SavedItem | null>(null);
+  const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
 
-  const clusters = useMemo(() => {
-    const tagCounts = new Map<string, SavedItem[]>();
-    
-    items.forEach((item) => {
-      item.tags.forEach((tag) => {
-        const existing = tagCounts.get(tag) || [];
-        existing.push(item);
-        tagCounts.set(tag, existing);
+  const { nodes, connections } = useMemo(() => {
+    if (items.length === 0) return { nodes: [], connections: [] };
+
+    const nodePositions: NodePosition[] = [];
+    const conns: Connection[] = [];
+
+    const width = 100;
+    const height = 100;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) * 0.35;
+
+    items.forEach((item, index) => {
+      const angle = (index / items.length) * 2 * Math.PI - Math.PI / 2;
+      const jitterX = (Math.random() - 0.5) * 8;
+      const jitterY = (Math.random() - 0.5) * 8;
+      
+      nodePositions.push({
+        id: item.id,
+        x: centerX + Math.cos(angle) * radius + jitterX,
+        y: centerY + Math.sin(angle) * radius + jitterY,
+        item,
       });
     });
 
-    return Array.from(tagCounts.entries())
-      .filter(([_, items]) => items.length >= 1)
-      .sort((a, b) => b[1].length - a[1].length)
-      .slice(0, 7)
-      .map(([name, items], index) => ({
-        name,
-        items,
-        color: clusterColors[index % clusterColors.length],
-      }));
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const itemA = items[i];
+        const itemB = items[j];
+        const sharedTags = itemA.tags.filter((tag) => itemB.tags.includes(tag));
+        
+        if (sharedTags.length > 0) {
+          conns.push({
+            source: itemA.id,
+            target: itemB.id,
+            sharedTags,
+          });
+        }
+      }
+    }
+
+    return { nodes: nodePositions, connections: conns };
   }, [items]);
 
-  const graphNodes = useMemo(() => {
-    const nodes: GraphNode[] = [];
-    const centerX = 50;
-    const centerY = 50;
+  const getNodeColor = useCallback((item: SavedItem) => {
+    const primaryTag = item.tags[0] || "";
+    const hash = primaryTag.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return nodeColors[hash % nodeColors.length];
+  }, []);
 
-    clusters.forEach((cluster, clusterIndex) => {
-      const clusterAngle = (clusterIndex / clusters.length) * 2 * Math.PI;
-      const clusterRadius = 25 + (cluster.items.length * 2);
-      const clusterX = centerX + Math.cos(clusterAngle) * 30;
-      const clusterY = centerY + Math.sin(clusterAngle) * 25;
-
-      nodes.push({
-        id: `cluster-${cluster.name}`,
-        name: cluster.name,
-        type: "cluster",
-        x: clusterX,
-        y: clusterY,
-        z: 0.8 + Math.random() * 0.4,
-        size: clusterRadius,
-        color: cluster.color,
-        items: cluster.items,
-        tag: cluster.name,
-      });
-
-      cluster.items.forEach((item, itemIndex) => {
-        const itemAngle = (itemIndex / cluster.items.length) * 2 * Math.PI;
-        const itemRadius = clusterRadius * 0.4;
-        nodes.push({
-          id: item.id,
-          name: item.title,
-          type: "item",
-          x: clusterX + Math.cos(itemAngle) * itemRadius,
-          y: clusterY + Math.sin(itemAngle) * itemRadius,
-          z: 0.5 + Math.random() * 0.5,
-          size: 8 + item.connections.length * 2,
-          color: cluster.color,
-        });
-      });
-    });
-
-    return nodes;
-  }, [clusters]);
-
-  const handleClusterHover = (cluster: Cluster, e: React.MouseEvent) => {
-    setHoveredCluster(cluster);
-    setPopupPosition({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleItemClick = (nodeId: string) => {
-    const item = items.find((i) => i.id === nodeId);
-    if (item) setSelectedItem(item);
+  const handleNodeHover = (node: NodePosition, e: React.MouseEvent) => {
+    setHoveredNode(node.item);
+    setHoveredPosition({ x: e.clientX, y: e.clientY });
   };
 
   if (items.length === 0) {
@@ -137,7 +110,7 @@ export function KnowledgeGraph() {
         </div>
         <h3 className="font-serif text-2xl mb-3">Your knowledge graph awaits</h3>
         <p className="text-muted-foreground max-w-sm">
-          Start saving content to visualize how your ideas connect and cluster.
+          Start saving content to visualize how your ideas connect.
         </p>
       </motion.div>
     );
@@ -149,145 +122,170 @@ export function KnowledgeGraph() {
         <div>
           <h1 className="font-serif text-3xl tracking-tight mb-1">Knowledge Graph</h1>
           <p className="text-sm text-muted-foreground">
-            {items.length} items clustered by {clusters.length} tags
+            {items.length} items with {connections.length} connections
           </p>
         </div>
       </div>
 
-      <div className="relative h-[600px] rounded-2xl overflow-hidden bg-background dotted-grid-subtle border border-border/30">
-        <svg className="absolute inset-0 w-full h-full">
+      <div className="relative h-[600px] rounded-2xl overflow-hidden bg-card/50 border border-border/30">
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
           <defs>
-            <filter id="goo">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
-              <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
-            </filter>
-            {clusters.map((cluster, i) => (
-              <radialGradient key={cluster.name} id={`grad-${i}`} cx="30%" cy="30%">
-                <stop offset="0%" stopColor={cluster.color} stopOpacity="0.6" />
-                <stop offset="70%" stopColor={cluster.color} stopOpacity="0.2" />
-                <stop offset="100%" stopColor={cluster.color} stopOpacity="0.05" />
+            {nodes.map((node) => (
+              <radialGradient key={`glow-${node.id}`} id={`glow-${node.id}`}>
+                <stop offset="0%" stopColor={getNodeColor(node.item)} stopOpacity="0.3" />
+                <stop offset="100%" stopColor={getNodeColor(node.item)} stopOpacity="0" />
               </radialGradient>
             ))}
           </defs>
 
-          {graphNodes
-            .filter((n) => n.type === "cluster")
-            .map((node, index) => {
-              const cluster = clusters.find((c) => c.name === node.tag);
-              return (
-                <g key={node.id}>
-                  <motion.ellipse
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
-                    cx={`${node.x}%`}
-                    cy={`${node.y}%`}
-                    rx={node.size * 1.8}
-                    ry={node.size * 1.4}
-                    fill={`url(#grad-${index})`}
-                    className="liquid-boundary cursor-pointer"
-                    style={{ transformOrigin: `${node.x}% ${node.y}%` }}
-                    onMouseEnter={(e) => cluster && handleClusterHover(cluster, e as unknown as React.MouseEvent)}
-                    onMouseLeave={() => setHoveredCluster(null)}
-                  />
-                  <motion.text
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.1 + 0.3 }}
-                    x={`${node.x}%`}
-                    y={`${node.y + node.size * 0.5}%`}
-                    textAnchor="middle"
-                    className="fill-foreground text-xs font-medium pointer-events-none"
-                    style={{ fontSize: "11px" }}
-                  >
-                    {node.name}
-                  </motion.text>
-                </g>
-              );
-            })}
+          {connections.map((conn, index) => {
+            const sourceNode = nodes.find((n) => n.id === conn.source);
+            const targetNode = nodes.find((n) => n.id === conn.target);
+            if (!sourceNode || !targetNode) return null;
 
-          {graphNodes
-            .filter((n) => n.type === "item")
-            .map((node, index) => (
-              <motion.circle
-                key={node.id}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: node.z, opacity: 0.8 }}
-                transition={{ delay: 0.3 + index * 0.02, duration: 0.3 }}
-                cx={`${node.x}%`}
-                cy={`${node.y}%`}
-                r={node.size}
-                fill={node.color}
-                stroke={node.color}
-                strokeWidth="1"
-                className="cursor-pointer hover:opacity-100 transition-opacity"
-                style={{ filter: `drop-shadow(0 0 ${node.size}px ${node.color}40)` }}
-                onClick={() => handleItemClick(node.id)}
+            return (
+              <motion.line
+                key={`${conn.source}-${conn.target}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.15 + conn.sharedTags.length * 0.1 }}
+                transition={{ delay: 0.5 + index * 0.02 }}
+                x1={sourceNode.x}
+                y1={sourceNode.y}
+                x2={targetNode.x}
+                y2={targetNode.y}
+                stroke="currentColor"
+                strokeWidth={0.15 + conn.sharedTags.length * 0.1}
+                className="text-foreground"
               />
-            ))}
+            );
+          })}
+
+          {nodes.map((node, index) => {
+            const color = getNodeColor(node.item);
+            const isHovered = hoveredNode?.id === node.id;
+            const nodeSize = 2.5 + (node.item.tags.length * 0.3);
+
+            return (
+              <g key={node.id}>
+                <motion.circle
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 0.4 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                  cx={node.x}
+                  cy={node.y}
+                  r={nodeSize * 2}
+                  fill={`url(#glow-${node.id})`}
+                />
+                <motion.circle
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ 
+                    scale: isHovered ? 1.3 : 1, 
+                    opacity: 1 
+                  }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                  cx={node.x}
+                  cy={node.y}
+                  r={nodeSize}
+                  fill={color}
+                  stroke={isHovered ? "white" : color}
+                  strokeWidth={isHovered ? 0.3 : 0.15}
+                  className="cursor-pointer"
+                  style={{ filter: `drop-shadow(0 0 2px ${color})` }}
+                  onMouseEnter={(e) => handleNodeHover(node, e as unknown as React.MouseEvent)}
+                  onMouseLeave={() => setHoveredNode(null)}
+                  onClick={() => setSelectedItem(node.item)}
+                />
+                <motion.text
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: isHovered ? 1 : 0.7 }}
+                  transition={{ delay: index * 0.05 + 0.2 }}
+                  x={node.x}
+                  y={node.y + nodeSize + 2}
+                  textAnchor="middle"
+                  className="fill-foreground pointer-events-none select-none"
+                  style={{ fontSize: "2px", fontWeight: isHovered ? 600 : 400 }}
+                >
+                  {node.item.title.length > 20 
+                    ? node.item.title.substring(0, 18) + "..." 
+                    : node.item.title}
+                </motion.text>
+              </g>
+            );
+          })}
         </svg>
 
-        <div className="absolute bottom-4 left-4 flex items-center gap-4 glass rounded-xl px-4 py-3">
-          {clusters.slice(0, 5).map((cluster) => (
-            <div key={cluster.name} className="flex items-center gap-2">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: cluster.color }}
-              />
-              <span className="text-xs text-muted-foreground">{cluster.name}</span>
+        <div className="absolute bottom-4 left-4 glass rounded-xl px-4 py-3">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-accent" />
+              <span>Item node</span>
             </div>
-          ))}
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-px bg-foreground/30" />
+              <span>Shared tags</span>
+            </div>
+          </div>
         </div>
 
-        <div className="absolute top-4 right-4 flex gap-2">
-          <div className="glass rounded-xl px-4 py-2">
-            <span className="text-xs text-muted-foreground">Click nodes to view details</span>
-          </div>
+        <div className="absolute top-4 right-4 glass rounded-xl px-4 py-2">
+          <span className="text-xs text-muted-foreground">Hover to preview, click to open</span>
         </div>
       </div>
 
       <AnimatePresence>
-        {hoveredCluster && (
+        {hoveredNode && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed z-50 glass rounded-2xl p-4 min-w-[280px] max-w-sm border border-border/50"
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="fixed z-50 glass rounded-2xl p-4 w-80 border border-border/50 shadow-xl"
             style={{
-              left: Math.min(popupPosition.x + 20, window.innerWidth - 320),
-              top: Math.min(popupPosition.y - 100, window.innerHeight - 300),
+              left: Math.min(hoveredPosition.x + 20, window.innerWidth - 340),
+              top: Math.min(hoveredPosition.y - 20, window.innerHeight - 250),
             }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: hoveredCluster.color }}
-                />
-                <h3 className="font-serif text-lg">{hoveredCluster.name}</h3>
-              </div>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                {hoveredCluster.items.length} items
-              </span>
-            </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin">
-              {hoveredCluster.items.slice(0, 5).map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => setSelectedItem(item)}
-                >
-                  {item.favicon && (
-                    <img src={item.favicon} alt="" className="w-4 h-4 rounded" />
-                  )}
-                  <span className="text-sm truncate flex-1">{item.title}</span>
+            <div className="flex items-start gap-3 mb-3">
+              {hoveredNode.favicon ? (
+                <img src={hoveredNode.favicon} alt="" className="w-8 h-8 rounded-lg mt-0.5" />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
                 </div>
-              ))}
-              {hoveredCluster.items.length > 5 && (
-                <p className="text-xs text-muted-foreground text-center py-1">
-                  +{hoveredCluster.items.length - 5} more
-                </p>
               )}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-sm leading-snug line-clamp-2">{hoveredNode.title}</h3>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{hoveredNode.url}</p>
+              </div>
+            </div>
+
+            {hoveredNode.summary && (
+              <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                {hoveredNode.summary}
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {hoveredNode.tags.slice(0, 4).map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-0.5 text-[10px] rounded-full bg-accent/20 text-accent-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+              {hoveredNode.tags.length > 4 && (
+                <span className="px-2 py-0.5 text-[10px] rounded-full bg-muted text-muted-foreground">
+                  +{hoveredNode.tags.length - 4}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground capitalize">{hoveredNode.intent.replace("_", " ")}</span>
+              <div className="flex items-center gap-1 text-accent">
+                <ExternalLink className="w-3 h-3" />
+                <span>Click to view</span>
+              </div>
             </div>
           </motion.div>
         )}
