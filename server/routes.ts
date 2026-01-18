@@ -619,6 +619,138 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/items/upload/stream", upload.array("files", 10), async (req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    const sendEvent = (data: object) => {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    try {
+      const files = req.files as Express.Multer.File[];
+      
+      if (!files || files.length === 0) {
+        sendEvent({ type: "error", message: "No files uploaded" });
+        res.end();
+        return;
+      }
+
+      for (const file of files) {
+        const extracted = await extractContentFromFile(file.buffer, file.originalname, file.mimetype);
+        
+        if (extracted.isBookmarks && extracted.bookmarkUrls && extracted.bookmarkUrls.length > 0) {
+          const bookmarks = extracted.bookmarkUrls.slice(0, 100);
+          sendEvent({ type: "start", total: bookmarks.length, fileName: file.originalname });
+
+          const limit = pLimit(3);
+          let successCount = 0;
+          let failCount = 0;
+
+          const processBookmark = async (bookmark: { url: string; title: string }, index: number) => {
+            try {
+              const urlExtracted = await extractContentFromUrl(bookmark.url);
+              const analysis = await analyzeContentWithAI(urlExtracted.content, bookmark.title || urlExtracted.title);
+
+              const parseResult = insertSavedItemSchema.safeParse({ url: bookmark.url });
+              if (!parseResult.success) {
+                throw new Error("Invalid URL");
+              }
+
+              const enrichedData = {
+                title: bookmark.title || urlExtracted.title,
+                content: urlExtracted.content,
+                summary: analysis.summary,
+                tags: analysis.tags,
+                concepts: analysis.concepts,
+                domain: urlExtracted.domain,
+                favicon: urlExtracted.favicon,
+                imageUrl: urlExtracted.imageUrl,
+                expiresAt: null,
+              };
+
+              const newItem = await storage.createItem(parseResult.data, enrichedData);
+              successCount++;
+              
+              sendEvent({ 
+                type: "item", 
+                index, 
+                item: newItem,
+                progress: { success: successCount, failed: failCount, total: bookmarks.length }
+              });
+
+              const existingItems = await storage.getAllItems();
+              if (existingItems.length > 1) {
+                const connectionResult = await findConnectionsWithAI(
+                  { title: newItem.title, summary: newItem.summary, tags: newItem.tags, concepts: newItem.concepts },
+                  existingItems.filter(i => i.id !== newItem.id).slice(0, 10).map((item) => ({
+                    id: item.id,
+                    title: item.title,
+                    summary: item.summary,
+                    tags: item.tags,
+                    concepts: item.concepts,
+                  }))
+                );
+
+                if (connectionResult.connections.length > 0) {
+                  await storage.updateItem(newItem.id, { 
+                    connections: connectionResult.connections,
+                    connectionReasons: connectionResult.reasons,
+                  });
+                }
+              }
+            } catch (error) {
+              failCount++;
+              sendEvent({ 
+                type: "error", 
+                index, 
+                url: bookmark.url, 
+                message: error instanceof Error ? error.message : "Failed",
+                progress: { success: successCount, failed: failCount, total: bookmarks.length }
+              });
+            }
+          };
+
+          await Promise.all(bookmarks.map((b, i) => limit(() => processBookmark(b, i))));
+          sendEvent({ type: "complete", success: successCount, failed: failCount, total: bookmarks.length });
+        } else {
+          sendEvent({ type: "start", total: 1, fileName: file.originalname });
+          
+          const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
+          const fileUrl = `file://${encodeURIComponent(file.originalname)}`;
+          
+          const parseResult = insertSavedItemSchema.safeParse({ url: fileUrl });
+          if (!parseResult.success) {
+            sendEvent({ type: "error", message: "Invalid file" });
+            continue;
+          }
+
+          const enrichedData = {
+            title: extracted.title,
+            content: extracted.content,
+            summary: analysis.summary,
+            tags: analysis.tags,
+            concepts: analysis.concepts,
+            domain: "local",
+            favicon: undefined,
+            imageUrl: undefined,
+            expiresAt: null,
+          };
+
+          const newItem = await storage.createItem(parseResult.data, enrichedData);
+          sendEvent({ type: "item", index: 0, item: newItem, progress: { success: 1, failed: 0, total: 1 } });
+          sendEvent({ type: "complete", success: 1, failed: 0, total: 1 });
+        }
+      }
+      res.end();
+    } catch (error) {
+      sendEvent({ type: "error", message: error instanceof Error ? error.message : "Upload failed" });
+      res.end();
+    }
+  });
+
   app.post("/api/items/upload", upload.array("files", 10), async (req: Request, res: Response) => {
     try {
       const files = req.files as Express.Multer.File[];
@@ -634,33 +766,23 @@ export async function registerRoutes(
           const extracted = await extractContentFromFile(file.buffer, file.originalname, file.mimetype);
           
           if (extracted.isBookmarks && extracted.bookmarkUrls && extracted.bookmarkUrls.length > 0) {
-            console.log(`Detected bookmark file with ${extracted.bookmarkUrls.length} URLs`);
+            const bookmarks = extracted.bookmarkUrls.slice(0, 100);
+            console.log(`Detected bookmark file with ${extracted.bookmarkUrls.length} URLs, processing ${bookmarks.length}`);
+            
+            const limit = pLimit(3);
             let successCount = 0;
             let failCount = 0;
             const importedItems: SavedItem[] = [];
-            
-            for (const bookmark of extracted.bookmarkUrls.slice(0, 50)) {
+
+            const processBookmark = async (bookmark: { url: string; title: string }) => {
               try {
                 const urlExtracted = await extractContentFromUrl(bookmark.url);
-                const existingItems = await storage.getAllItems();
                 const analysis = await analyzeContentWithAI(urlExtracted.content, bookmark.title || urlExtracted.title);
-                
-                const connectionResult = await findConnectionsWithAI(
-                  { title: bookmark.title || urlExtracted.title, summary: analysis.summary, tags: analysis.tags, concepts: analysis.concepts },
-                  existingItems.map((item) => ({
-                    id: item.id,
-                    title: item.title,
-                    summary: item.summary,
-                    tags: item.tags,
-                    concepts: item.concepts,
-                  }))
-                );
 
                 const parseResult = insertSavedItemSchema.safeParse({ url: bookmark.url });
                 if (!parseResult.success) {
-                  console.log(`URL validation failed for: ${bookmark.url}`);
                   failCount++;
-                  continue;
+                  return;
                 }
 
                 const enrichedData = {
@@ -676,32 +798,15 @@ export async function registerRoutes(
                 };
 
                 const newItem = await storage.createItem(parseResult.data, enrichedData);
-
-                if (connectionResult.connections.length > 0) {
-                  await storage.updateItem(newItem.id, { 
-                    connections: connectionResult.connections,
-                    connectionReasons: connectionResult.reasons,
-                  });
-                  for (const connId of connectionResult.connections) {
-                    const connItem = await storage.getItem(connId);
-                    if (connItem && !connItem.connections.includes(newItem.id)) {
-                      await storage.updateItem(connId, {
-                        connections: [...connItem.connections, newItem.id],
-                      });
-                    }
-                  }
-                }
-                
-                const updatedItem = await storage.getItem(newItem.id);
-                if (updatedItem) {
-                  importedItems.push(updatedItem);
-                }
+                importedItems.push(newItem);
                 successCount++;
               } catch (err) {
-                console.log(`Failed to process bookmark: ${bookmark.url}`, err);
+                console.log(`Failed to process bookmark: ${bookmark.url}`);
                 failCount++;
               }
-            }
+            };
+
+            await Promise.all(bookmarks.map(b => limit(() => processBookmark(b))));
             
             results.push({
               fileName: file.originalname,
