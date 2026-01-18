@@ -1,8 +1,6 @@
 import { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -32,7 +30,6 @@ const acceptedTypes = ".html,.htm,.pdf,.txt,.md,.doc,.docx";
 
 export function FileUploadModal({ open, onOpenChange }: FileUploadModalProps) {
   const [files, setFiles] = useState<File[]>([]);
-  const [intent, setIntent] = useState("read_later");
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<FileUploadResult[] | null>(null);
@@ -86,7 +83,6 @@ export function FileUploadModal({ open, onOpenChange }: FileUploadModalProps) {
     try {
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
-      formData.append("intent", intent);
 
       const response = await fetch("/api/items/upload", {
         method: "POST",
@@ -125,7 +121,6 @@ export function FileUploadModal({ open, onOpenChange }: FileUploadModalProps) {
     if (!isLoading) {
       onOpenChange(false);
       setFiles([]);
-      setIntent("read_later");
       setResults(null);
       setProgress(0);
     }
@@ -222,33 +217,6 @@ export function FileUploadModal({ open, onOpenChange }: FileUploadModalProps) {
               ))}
             </div>
           )}
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Default Intent</Label>
-            <RadioGroup
-              value={intent}
-              onValueChange={setIntent}
-              className="grid grid-cols-2 gap-2"
-              data-testid="radio-intent"
-            >
-              <div className="flex items-center space-x-2 p-2 rounded-lg border border-border/50 hover-elevate">
-                <RadioGroupItem value="read_later" id="file-read" />
-                <Label htmlFor="file-read" className="cursor-pointer text-sm">Read Later</Label>
-              </div>
-              <div className="flex items-center space-x-2 p-2 rounded-lg border border-border/50 hover-elevate">
-                <RadioGroupItem value="reference" id="file-reference" />
-                <Label htmlFor="file-reference" className="cursor-pointer text-sm">Reference</Label>
-              </div>
-              <div className="flex items-center space-x-2 p-2 rounded-lg border border-border/50 hover-elevate">
-                <RadioGroupItem value="inspiration" id="file-inspiration" />
-                <Label htmlFor="file-inspiration" className="cursor-pointer text-sm">Inspiration</Label>
-              </div>
-              <div className="flex items-center space-x-2 p-2 rounded-lg border border-border/50 hover-elevate">
-                <RadioGroupItem value="tutorial" id="file-tutorial" />
-                <Label htmlFor="file-tutorial" className="cursor-pointer text-sm">Tutorial</Label>
-              </div>
-            </RadioGroup>
-          </div>
 
           {isLoading && (
             <div className="space-y-2">

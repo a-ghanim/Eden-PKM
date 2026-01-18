@@ -108,6 +108,7 @@ async function analyzeContentWithAI(content: string, title: string): Promise<{
   summary: string;
   tags: string[];
   concepts: string[];
+  intent: "read_later" | "reference" | "inspiration" | "tutorial";
 }> {
   try {
     const message = await anthropic.messages.create({
@@ -120,6 +121,11 @@ async function analyzeContentWithAI(content: string, title: string): Promise<{
 1. A concise 2-3 sentence summary
 2. 3-5 relevant tags (single words or short phrases)
 3. 3-5 key concepts mentioned (people, technologies, companies, ideas)
+4. The most appropriate intent category:
+   - "read_later": Articles, blog posts, long-form content to read when you have time
+   - "reference": Documentation, API docs, technical references to look up later
+   - "inspiration": Design examples, portfolios, creative work, visual inspiration
+   - "tutorial": How-to guides, step-by-step instructions, courses, learning materials
 
 Title: ${title}
 Content: ${content.slice(0, 2000)}
@@ -128,7 +134,8 @@ Respond in JSON format:
 {
   "summary": "...",
   "tags": ["...", "..."],
-  "concepts": ["...", "..."]
+  "concepts": ["...", "..."],
+  "intent": "read_later" | "reference" | "inspiration" | "tutorial"
 }`,
         },
       ],
@@ -144,6 +151,7 @@ Respond in JSON format:
       summary: "Content saved for later reading.",
       tags: ["Uncategorized"],
       concepts: [],
+      intent: "read_later" as const,
     };
   } catch (error) {
     console.error("AI analysis failed:", error);
@@ -151,6 +159,7 @@ Respond in JSON format:
       summary: "Content captured successfully. AI analysis unavailable.",
       tags: ["Uncategorized"],
       concepts: [],
+      intent: "read_later" as const,
     };
   }
 }
@@ -479,14 +488,10 @@ export async function registerRoutes(
   app.post("/api/items/upload", upload.array("files", 10), async (req: Request, res: Response) => {
     try {
       const files = req.files as Express.Multer.File[];
-      const intent = req.body.intent || "read_later";
       
       if (!files || files.length === 0) {
         return res.status(400).json({ error: "No files uploaded" });
       }
-
-      const validIntents = ["read_later", "reference", "inspiration", "tutorial"];
-      const safeIntent = validIntents.includes(intent) ? intent : "read_later";
 
       const results: { fileName: string; success: boolean; item?: SavedItem; error?: string }[] = [];
       const existingItems = await storage.getAllItems();
@@ -509,7 +514,7 @@ export async function registerRoutes(
 
           const fileUrl = `file://${encodeURIComponent(file.originalname)}`;
           
-          const parseResult = insertSavedItemSchema.safeParse({ url: fileUrl, intent: safeIntent });
+          const parseResult = insertSavedItemSchema.safeParse({ url: fileUrl, intent: analysis.intent });
           if (!parseResult.success) {
             throw new Error(fromZodError(parseResult.error).message);
           }
