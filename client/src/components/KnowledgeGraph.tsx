@@ -1,165 +1,116 @@
-import { useMemo } from "react";
-import { motion } from "framer-motion";
-import {
-  ScatterChart,
-  Scatter,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  ZAxis,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 import { useEden } from "@/lib/store";
+import type { SavedItem } from "@shared/schema";
 
 interface GraphNode {
   id: string;
   name: string;
-  type: "item" | "concept" | "tag";
+  type: "item" | "cluster";
   x: number;
   y: number;
+  z: number;
   size: number;
   color: string;
-  connections: number;
+  items?: SavedItem[];
+  tag?: string;
 }
 
-const typeColors = {
-  item: "hsl(153, 24%, 46%)",
-  concept: "hsl(30, 80%, 60%)",
-  tag: "hsl(215, 60%, 55%)",
-};
+interface Cluster {
+  name: string;
+  items: SavedItem[];
+  color: string;
+}
+
+const clusterColors = [
+  "hsl(160, 50%, 42%)",
+  "hsl(200, 70%, 50%)",
+  "hsl(280, 60%, 55%)",
+  "hsl(45, 85%, 50%)",
+  "hsl(340, 70%, 55%)",
+  "hsl(120, 45%, 45%)",
+  "hsl(30, 80%, 55%)",
+];
 
 export function KnowledgeGraph() {
-  const { items, concepts, setSelectedItem } = useEden();
+  const { items, setSelectedItem } = useEden();
+  const [hoveredCluster, setHoveredCluster] = useState<Cluster | null>(null);
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 
-  const graphData = useMemo(() => {
-    const nodes: GraphNode[] = [];
-    const conceptMap = new Map<string, { count: number; items: string[] }>();
-    const tagMap = new Map<string, { count: number; items: string[] }>();
-
+  const clusters = useMemo(() => {
+    const tagCounts = new Map<string, SavedItem[]>();
+    
     items.forEach((item) => {
-      item.concepts.forEach((concept) => {
-        const existing = conceptMap.get(concept) || { count: 0, items: [] };
-        existing.count += 1;
-        existing.items.push(item.id);
-        conceptMap.set(concept, existing);
-      });
-
       item.tags.forEach((tag) => {
-        const existing = tagMap.get(tag) || { count: 0, items: [] };
-        existing.count += 1;
-        existing.items.push(item.id);
-        tagMap.set(tag, existing);
+        const existing = tagCounts.get(tag) || [];
+        existing.push(item);
+        tagCounts.set(tag, existing);
       });
     });
 
+    return Array.from(tagCounts.entries())
+      .filter(([_, items]) => items.length >= 1)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 7)
+      .map(([name, items], index) => ({
+        name,
+        items,
+        color: clusterColors[index % clusterColors.length],
+      }));
+  }, [items]);
+
+  const graphNodes = useMemo(() => {
+    const nodes: GraphNode[] = [];
     const centerX = 50;
     const centerY = 50;
 
-    items.forEach((item, index) => {
-      const angle = (index / items.length) * 2 * Math.PI;
-      const radius = 30 + Math.random() * 15;
+    clusters.forEach((cluster, clusterIndex) => {
+      const clusterAngle = (clusterIndex / clusters.length) * 2 * Math.PI;
+      const clusterRadius = 25 + (cluster.items.length * 2);
+      const clusterX = centerX + Math.cos(clusterAngle) * 30;
+      const clusterY = centerY + Math.sin(clusterAngle) * 25;
+
       nodes.push({
-        id: item.id,
-        name: item.title.slice(0, 30) + (item.title.length > 30 ? "..." : ""),
-        type: "item",
-        x: centerX + Math.cos(angle) * radius,
-        y: centerY + Math.sin(angle) * radius,
-        size: 60 + (item.connections.length * 10),
-        color: typeColors.item,
-        connections: item.connections.length + item.concepts.length + item.tags.length,
+        id: `cluster-${cluster.name}`,
+        name: cluster.name,
+        type: "cluster",
+        x: clusterX,
+        y: clusterY,
+        z: 0.8 + Math.random() * 0.4,
+        size: clusterRadius,
+        color: cluster.color,
+        items: cluster.items,
+        tag: cluster.name,
+      });
+
+      cluster.items.forEach((item, itemIndex) => {
+        const itemAngle = (itemIndex / cluster.items.length) * 2 * Math.PI;
+        const itemRadius = clusterRadius * 0.4;
+        nodes.push({
+          id: item.id,
+          name: item.title,
+          type: "item",
+          x: clusterX + Math.cos(itemAngle) * itemRadius,
+          y: clusterY + Math.sin(itemAngle) * itemRadius,
+          z: 0.5 + Math.random() * 0.5,
+          size: 8 + item.connections.length * 2,
+          color: cluster.color,
+        });
       });
     });
-
-    Array.from(conceptMap.entries())
-      .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 15)
-      .forEach(([concept, data], index) => {
-        const angle = (index / 15) * 2 * Math.PI + Math.PI / 4;
-        const radius = 15 + Math.random() * 10;
-        nodes.push({
-          id: `concept-${concept}`,
-          name: concept,
-          type: "concept",
-          x: centerX + Math.cos(angle) * radius,
-          y: centerY + Math.sin(angle) * radius,
-          size: 40 + data.count * 15,
-          color: typeColors.concept,
-          connections: data.count,
-        });
-      });
-
-    Array.from(tagMap.entries())
-      .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 10)
-      .forEach(([tag, data], index) => {
-        const angle = (index / 10) * 2 * Math.PI - Math.PI / 4;
-        const radius = 20 + Math.random() * 12;
-        nodes.push({
-          id: `tag-${tag}`,
-          name: tag,
-          type: "tag",
-          x: centerX + Math.cos(angle) * radius,
-          y: centerY + Math.sin(angle) * radius,
-          size: 30 + data.count * 12,
-          color: typeColors.tag,
-          connections: data.count,
-        });
-      });
 
     return nodes;
-  }, [items]);
+  }, [clusters]);
 
-  const stats = useMemo(() => {
-    const uniqueConcepts = new Set<string>();
-    const uniqueTags = new Set<string>();
-    let totalConnections = 0;
-
-    items.forEach((item) => {
-      item.concepts.forEach((c) => uniqueConcepts.add(c));
-      item.tags.forEach((t) => uniqueTags.add(t));
-      totalConnections += item.connections.length;
-    });
-
-    return {
-      items: items.length,
-      concepts: uniqueConcepts.size,
-      tags: uniqueTags.size,
-      connections: totalConnections,
-    };
-  }, [items]);
-
-  const handleNodeClick = (data: GraphNode) => {
-    if (data.type === "item") {
-      const item = items.find((i) => i.id === data.id);
-      if (item) setSelectedItem(item);
-    }
+  const handleClusterHover = (cluster: Cluster, e: React.MouseEvent) => {
+    setHoveredCluster(cluster);
+    setPopupPosition({ x: e.clientX, y: e.clientY });
   };
 
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload as GraphNode;
-      return (
-        <div className="bg-popover border rounded-lg shadow-lg p-3 max-w-xs">
-          <p className="font-medium text-sm">{data.name}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge
-              variant="outline"
-              className="text-2xs capitalize"
-              style={{ borderColor: data.color, color: data.color }}
-            >
-              {data.type}
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              {data.connections} connections
-            </span>
-          </div>
-        </div>
-      );
-    }
-    return null;
+  const handleItemClick = (nodeId: string) => {
+    const item = items.find((i) => i.id === nodeId);
+    if (item) setSelectedItem(item);
   };
 
   if (items.length === 0) {
@@ -167,23 +118,26 @@ export function KnowledgeGraph() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center py-16 text-center"
+        className="flex flex-col items-center justify-center py-24 text-center"
       >
-        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="3" />
-            <circle cx="5" cy="6" r="2" />
-            <circle cx="19" cy="6" r="2" />
-            <circle cx="5" cy="18" r="2" />
-            <circle cx="19" cy="18" r="2" />
-            <line x1="12" y1="9" x2="12" y2="3" />
-            <line x1="9.5" y1="13.5" x2="6.5" y2="16.5" />
-            <line x1="14.5" y1="13.5" x2="17.5" y2="16.5" />
-          </svg>
+        <div className="relative mb-8">
+          <div className="w-32 h-32 sphere-3d opacity-30" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg className="w-12 h-12 text-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="3" />
+              <circle cx="5" cy="6" r="2" />
+              <circle cx="19" cy="6" r="2" />
+              <circle cx="5" cy="18" r="2" />
+              <circle cx="19" cy="18" r="2" />
+              <line x1="12" y1="9" x2="12" y2="3" />
+              <line x1="9.5" y1="13.5" x2="6.5" y2="16.5" />
+              <line x1="14.5" y1="13.5" x2="17.5" y2="16.5" />
+            </svg>
+          </div>
         </div>
-        <h3 className="text-lg font-semibold mb-2">No knowledge graph yet</h3>
+        <h3 className="font-serif text-2xl mb-3">Your knowledge graph awaits</h3>
         <p className="text-muted-foreground max-w-sm">
-          Start saving content to see how your knowledge connects and clusters.
+          Start saving content to visualize how your ideas connect and cluster.
         </p>
       </motion.div>
     );
@@ -191,85 +145,153 @@ export function KnowledgeGraph() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-primary">{stats.items}</div>
-            <p className="text-xs text-muted-foreground">Saved Items</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-2xl font-bold" style={{ color: typeColors.concept }}>
-              {stats.concepts}
-            </div>
-            <p className="text-xs text-muted-foreground">Concepts</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-2xl font-bold" style={{ color: typeColors.tag }}>
-              {stats.tags}
-            </div>
-            <p className="text-xs text-muted-foreground">Tags</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-2xl font-bold">{stats.connections}</div>
-            <p className="text-xs text-muted-foreground">Connections</p>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-serif text-3xl tracking-tight mb-1">Knowledge Graph</h1>
+          <p className="text-sm text-muted-foreground">
+            {items.length} items clustered by {clusters.length} tags
+          </p>
+        </div>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-4">
-            Knowledge Graph
-            <div className="flex items-center gap-3 ml-auto text-xs font-normal">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: typeColors.item }} />
-                <span className="text-muted-foreground">Items</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: typeColors.concept }} />
-                <span className="text-muted-foreground">Concepts</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: typeColors.tag }} />
-                <span className="text-muted-foreground">Tags</span>
-              </div>
+      <div className="relative h-[600px] rounded-2xl overflow-hidden dotted-grid-subtle border border-border/30">
+        <svg className="absolute inset-0 w-full h-full">
+          <defs>
+            <filter id="goo">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+              <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+            </filter>
+            {clusters.map((cluster, i) => (
+              <radialGradient key={cluster.name} id={`grad-${i}`} cx="30%" cy="30%">
+                <stop offset="0%" stopColor={cluster.color} stopOpacity="0.6" />
+                <stop offset="70%" stopColor={cluster.color} stopOpacity="0.2" />
+                <stop offset="100%" stopColor={cluster.color} stopOpacity="0.05" />
+              </radialGradient>
+            ))}
+          </defs>
+
+          {graphNodes
+            .filter((n) => n.type === "cluster")
+            .map((node, index) => {
+              const cluster = clusters.find((c) => c.name === node.tag);
+              return (
+                <g key={node.id}>
+                  <motion.ellipse
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                    cx={`${node.x}%`}
+                    cy={`${node.y}%`}
+                    rx={node.size * 1.8}
+                    ry={node.size * 1.4}
+                    fill={`url(#grad-${index})`}
+                    className="liquid-boundary cursor-pointer"
+                    style={{ transformOrigin: `${node.x}% ${node.y}%` }}
+                    onMouseEnter={(e) => cluster && handleClusterHover(cluster, e as unknown as React.MouseEvent)}
+                    onMouseLeave={() => setHoveredCluster(null)}
+                  />
+                  <motion.text
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.1 + 0.3 }}
+                    x={`${node.x}%`}
+                    y={`${node.y + node.size * 0.5}%`}
+                    textAnchor="middle"
+                    className="fill-foreground text-xs font-medium pointer-events-none"
+                    style={{ fontSize: "11px" }}
+                  >
+                    {node.name}
+                  </motion.text>
+                </g>
+              );
+            })}
+
+          {graphNodes
+            .filter((n) => n.type === "item")
+            .map((node, index) => (
+              <motion.circle
+                key={node.id}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: node.z, opacity: 0.8 }}
+                transition={{ delay: 0.3 + index * 0.02, duration: 0.3 }}
+                cx={`${node.x}%`}
+                cy={`${node.y}%`}
+                r={node.size}
+                fill={node.color}
+                stroke={node.color}
+                strokeWidth="1"
+                className="cursor-pointer hover:opacity-100 transition-opacity"
+                style={{ filter: `drop-shadow(0 0 ${node.size}px ${node.color}40)` }}
+                onClick={() => handleItemClick(node.id)}
+              />
+            ))}
+        </svg>
+
+        <div className="absolute bottom-4 left-4 flex items-center gap-4 glass rounded-xl px-4 py-3">
+          {clusters.slice(0, 5).map((cluster) => (
+            <div key={cluster.name} className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: cluster.color }}
+              />
+              <span className="text-xs text-muted-foreground">{cluster.name}</span>
             </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[500px] w-full dotted-grid rounded-lg">
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <XAxis type="number" dataKey="x" domain={[0, 100]} hide />
-                <YAxis type="number" dataKey="y" domain={[0, 100]} hide />
-                <ZAxis type="number" dataKey="size" range={[40, 400]} />
-                <Tooltip content={<CustomTooltip />} />
-                <Scatter
-                  data={graphData}
-                  onClick={(data) => handleNodeClick(data)}
-                  style={{ cursor: "pointer" }}
-                >
-                  {graphData.map((node, index) => (
-                    <Cell
-                      key={node.id}
-                      fill={node.color}
-                      fillOpacity={0.7}
-                      stroke={node.color}
-                      strokeWidth={2}
-                    />
-                  ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
+          ))}
+        </div>
+
+        <div className="absolute top-4 right-4 flex gap-2">
+          <div className="glass rounded-xl px-4 py-2">
+            <span className="text-xs text-muted-foreground">Click nodes to view details</span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {hoveredCluster && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed z-50 glass rounded-2xl p-4 min-w-[280px] max-w-sm border border-border/50"
+            style={{
+              left: Math.min(popupPosition.x + 20, window.innerWidth - 320),
+              top: Math.min(popupPosition.y - 100, window.innerHeight - 300),
+            }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: hoveredCluster.color }}
+                />
+                <h3 className="font-serif text-lg">{hoveredCluster.name}</h3>
+              </div>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                {hoveredCluster.items.length} items
+              </span>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin">
+              {hoveredCluster.items.slice(0, 5).map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => setSelectedItem(item)}
+                >
+                  {item.favicon && (
+                    <img src={item.favicon} alt="" className="w-4 h-4 rounded" />
+                  )}
+                  <span className="text-sm truncate flex-1">{item.title}</span>
+                </div>
+              ))}
+              {hoveredCluster.items.length > 5 && (
+                <p className="text-xs text-muted-foreground text-center py-1">
+                  +{hoveredCluster.items.length - 5} more
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

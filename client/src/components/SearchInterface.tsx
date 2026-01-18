@@ -1,17 +1,8 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, X, SlidersHorizontal, Calendar, Tag } from "lucide-react";
+import { Search, X, SlidersHorizontal, Calendar, Tag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
@@ -101,6 +92,7 @@ export function SearchInterface() {
   };
 
   const hasActiveFilters = searchQuery || selectedIntent || selectedTags.length > 0 || dateFilter !== "all";
+  const activeFilterCount = [selectedIntent, ...selectedTags, dateFilter !== "all" ? dateFilter : null].filter(Boolean).length;
 
   return (
     <div className="space-y-6">
@@ -109,10 +101,10 @@ export function SearchInterface() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search your knowledge base... (try 'React performance' or 'that article about startups')"
+            placeholder="Search your knowledge..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 pr-12 h-14 text-lg glassmorphism"
+            className="pl-12 pr-12 h-12 text-base rounded-xl bg-muted/50 border-border/50 focus:bg-muted/70"
             data-testid="input-search"
           />
           {searchQuery && (
@@ -130,22 +122,22 @@ export function SearchInterface() {
         <div className="flex items-center gap-2 flex-wrap">
           <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 rounded-xl">
                 <SlidersHorizontal className="w-4 h-4" />
                 Filters
-                {hasActiveFilters && (
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-                    {[selectedIntent, ...selectedTags, dateFilter !== "all" ? dateFilter : null].filter(Boolean).length}
-                  </Badge>
+                {activeFilterCount > 0 && (
+                  <span className="ml-1 w-5 h-5 rounded-full bg-accent text-accent-foreground text-xs flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80" align="start">
+            <PopoverContent className="w-80 glass border-border/50" align="start">
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Date saved
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Calendar className="w-3 h-3" />
+                    Date
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {(["all", "today", "week", "month"] as const).map((filter) => (
@@ -154,15 +146,16 @@ export function SearchInterface() {
                         variant={dateFilter === filter ? "default" : "outline"}
                         size="sm"
                         onClick={() => setDateFilter(filter)}
+                        className="rounded-lg"
                       >
-                        {filter === "all" ? "All time" : filter === "today" ? "Today" : filter === "week" ? "This week" : "This month"}
+                        {filter === "all" ? "All" : filter === "today" ? "Today" : filter === "week" ? "Week" : "Month"}
                       </Button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="font-medium text-sm mb-2">Intent</h4>
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Intent</h4>
                   <div className="flex flex-wrap gap-2">
                     {(Object.keys(intentLabels) as IntentType[]).map((intent) => (
                       <Button
@@ -170,6 +163,7 @@ export function SearchInterface() {
                         variant={selectedIntent === intent ? "default" : "outline"}
                         size="sm"
                         onClick={() => setSelectedIntent(selectedIntent === intent ? null : intent)}
+                        className="rounded-lg"
                       >
                         {intentLabels[intent]}
                       </Button>
@@ -178,18 +172,18 @@ export function SearchInterface() {
                 </div>
 
                 <div>
-                  <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                    <Tag className="w-4 h-4" />
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Tag className="w-3 h-3" />
                     Tags
                   </h4>
-                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto scrollbar-thin">
                     {allTags.map((tag) => (
                       <Button
                         key={tag}
                         variant={selectedTags.includes(tag) ? "default" : "outline"}
                         size="sm"
                         onClick={() => handleTagToggle(tag)}
-                        className="text-xs"
+                        className="text-xs rounded-lg"
                       >
                         {tag}
                       </Button>
@@ -199,7 +193,7 @@ export function SearchInterface() {
 
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" className="w-full" onClick={clearFilters}>
-                    Clear all filters
+                    Clear all
                   </Button>
                 )}
               </div>
@@ -207,59 +201,35 @@ export function SearchInterface() {
           </Popover>
 
           {selectedIntent && (
-            <Badge variant="secondary" className="gap-1">
+            <span className="tag-pill-muted flex items-center gap-1">
               {intentLabels[selectedIntent as IntentType]}
-              <X
-                className="w-3 h-3 cursor-pointer"
-                onClick={() => setSelectedIntent(null)}
-              />
-            </Badge>
+              <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedIntent(null)} />
+            </span>
           )}
 
           {selectedTags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="gap-1">
+            <span key={tag} className="tag-pill-muted flex items-center gap-1">
               {tag}
-              <X
-                className="w-3 h-3 cursor-pointer"
-                onClick={() => handleTagToggle(tag)}
-              />
-            </Badge>
+              <X className="w-3 h-3 cursor-pointer" onClick={() => handleTagToggle(tag)} />
+            </span>
           ))}
-
-          {dateFilter !== "all" && (
-            <Badge variant="secondary" className="gap-1">
-              {dateFilter === "today" ? "Today" : dateFilter === "week" ? "This week" : "This month"}
-              <X
-                className="w-3 h-3 cursor-pointer"
-                onClick={() => setDateFilter("all")}
-              />
-            </Badge>
-          )}
         </div>
       </div>
 
-      <div className="text-sm text-muted-foreground">
-        {filteredItems.length === 0 ? (
-          <span>No results found</span>
-        ) : (
-          <span>
-            {filteredItems.length} {filteredItems.length === 1 ? "result" : "results"}
-          </span>
-        )}
-      </div>
+      <p className="text-sm text-muted-foreground">
+        {filteredItems.length} {filteredItems.length === 1 ? "result" : "results"}
+      </p>
 
       {filteredItems.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center justify-center py-16 text-center"
+          className="flex flex-col items-center justify-center py-20 text-center"
         >
-          <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-            <Search className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-semibold mb-2">No matching saves</h3>
-          <p className="text-muted-foreground max-w-sm">
-            Try adjusting your search or filters to find what you're looking for.
+          <div className="w-20 h-20 sphere-glass opacity-50 mb-6" />
+          <h3 className="font-serif text-xl mb-2">No results</h3>
+          <p className="text-muted-foreground text-sm max-w-sm">
+            Try adjusting your search or filters
           </p>
         </motion.div>
       ) : (
@@ -269,7 +239,7 @@ export function SearchInterface() {
               key={item.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              transition={{ delay: index * 0.03 }}
             >
               <SavedItemCard item={item} />
             </motion.div>

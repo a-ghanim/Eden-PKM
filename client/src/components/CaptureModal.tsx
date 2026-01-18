@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Link2, Loader2, Sparkles, BookOpen, Archive, Star, Clock } from "lucide-react";
+import { Link2, Loader2, BookOpen, Archive, Star, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,7 @@ import type { IntentType } from "@shared/schema";
 
 const intentOptions: { value: IntentType; label: string; icon: typeof BookOpen; description: string }[] = [
   { value: "read_later", label: "Read Later", icon: BookOpen, description: "Save to read when you have time" },
-  { value: "reference", label: "Reference", icon: Archive, description: "Keep as permanent reference material" },
+  { value: "reference", label: "Reference", icon: Archive, description: "Keep as permanent reference" },
   { value: "inspiration", label: "Inspiration", icon: Star, description: "Creative ideas and inspiration" },
   { value: "tutorial", label: "Tutorial", icon: Clock, description: "Guides and how-to content" },
 ];
@@ -41,7 +41,7 @@ export function CaptureModal() {
       addItem(item);
       toast({
         title: "Saved to Eden",
-        description: `"${item.title}" has been captured and analyzed.`,
+        description: `"${item.title}" has been captured.`,
       });
       setUrl("");
       setIntent("read_later");
@@ -67,30 +67,27 @@ export function CaptureModal() {
 
   return (
     <Dialog open={isCapturing} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-md glass border-border/50">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary" />
-            </div>
-            Capture to Eden
+          <DialogTitle className="font-serif text-2xl">
+            Capture
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="url" className="text-sm font-medium">
-              URL to capture
+            <Label htmlFor="url" className="text-xs text-muted-foreground uppercase tracking-wider">
+              URL
             </Label>
             <div className="relative">
               <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 id="url"
                 type="url"
-                placeholder="https://example.com/article"
+                placeholder="https://..."
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-11 rounded-xl bg-muted/50 border-border/50"
                 disabled={isLoading}
                 autoFocus
                 data-testid="input-capture-url"
@@ -99,11 +96,13 @@ export function CaptureModal() {
           </div>
 
           <div className="space-y-3">
-            <Label className="text-sm font-medium">What type of content is this?</Label>
+            <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+              Intent
+            </Label>
             <RadioGroup
               value={intent}
               onValueChange={(value) => setIntent(value as IntentType)}
-              className="grid grid-cols-2 gap-3"
+              className="grid grid-cols-2 gap-2"
             >
               {intentOptions.map((option) => (
                 <motion.div
@@ -112,10 +111,10 @@ export function CaptureModal() {
                 >
                   <Label
                     htmlFor={option.value}
-                    className={`flex flex-col gap-1 p-3 rounded-lg border cursor-pointer transition-all ${
+                    className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${
                       intent === option.value
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
+                        ? "border-accent bg-accent/10"
+                        : "border-border/50 hover:border-border bg-muted/30"
                     }`}
                   >
                     <RadioGroupItem
@@ -123,18 +122,13 @@ export function CaptureModal() {
                       id={option.value}
                       className="sr-only"
                     />
-                    <div className="flex items-center gap-2">
-                      <option.icon className={`w-4 h-4 ${
-                        intent === option.value ? "text-primary" : "text-muted-foreground"
-                      }`} />
-                      <span className={`text-sm font-medium ${
-                        intent === option.value ? "text-primary" : ""
-                      }`}>
-                        {option.label}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {option.description}
+                    <option.icon className={`w-4 h-4 ${
+                      intent === option.value ? "text-accent" : "text-muted-foreground"
+                    }`} />
+                    <span className={`text-sm ${
+                      intent === option.value ? "text-accent font-medium" : ""
+                    }`}>
+                      {option.label}
                     </span>
                   </Label>
                 </motion.div>
@@ -142,12 +136,13 @@ export function CaptureModal() {
             </RadioGroup>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={isLoading}
+              className="flex-1 rounded-xl"
               data-testid="button-capture-cancel"
             >
               Cancel
@@ -155,6 +150,7 @@ export function CaptureModal() {
             <Button
               type="submit"
               disabled={!url.trim() || isLoading}
+              className="flex-1 rounded-xl bg-accent hover:bg-accent/90"
               data-testid="button-capture-submit"
             >
               {isLoading ? (
@@ -163,10 +159,7 @@ export function CaptureModal() {
                   Analyzing...
                 </>
               ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Capture
-                </>
+                "Capture"
               )}
             </Button>
           </div>
@@ -178,18 +171,21 @@ export function CaptureModal() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg"
+              className="absolute inset-0 glass flex items-center justify-center rounded-xl"
             >
-              <div className="text-center space-y-3">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  className="w-12 h-12 mx-auto rounded-full border-2 border-primary border-t-transparent"
-                />
+              <div className="text-center space-y-4">
+                <div className="relative w-16 h-16 mx-auto">
+                  <div className="absolute inset-0 sphere-3d animate-pulse" />
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 rounded-full border-2 border-accent border-t-transparent"
+                  />
+                </div>
                 <div className="space-y-1">
-                  <p className="font-medium">Eden is analyzing...</p>
+                  <p className="font-serif text-lg">Analyzing...</p>
                   <p className="text-sm text-muted-foreground">
-                    Extracting content, generating summary, and finding connections
+                    Extracting content and finding connections
                   </p>
                 </div>
               </div>

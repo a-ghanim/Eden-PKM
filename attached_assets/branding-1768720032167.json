@@ -1,0 +1,102 @@
+{
+  "colorScheme": "dark",
+  "fonts": [
+    {
+      "family": "sans-serif",
+      "count": 30
+    },
+    {
+      "family": "haffer",
+      "count": 24
+    },
+    {
+      "family": "haffer Fallback",
+      "count": 24
+    },
+    {
+      "family": "tobias",
+      "count": 6
+    },
+    {
+      "family": "tobias Fallback",
+      "count": 6
+    },
+    {
+      "family": "Inter",
+      "count": 6
+    },
+    {
+      "family": "fraktion",
+      "count": 1
+    },
+    {
+      "family": "fraktion Fallback",
+      "count": 1
+    }
+  ],
+  "colors": {
+    "primary": "#F0E6D5",
+    "accent": "#818A94",
+    "background": "#151515",
+    "textPrimary": "#151515",
+    "link": "#818A94"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "sans-serif",
+      "heading": "haffer"
+    },
+    "fontStacks": {
+      "body": [
+        "sans-serif"
+      ],
+      "heading": [
+        "haffer",
+        "haffer Fallback"
+      ],
+      "paragraph": [
+        "haffer",
+        "haffer Fallback"
+      ]
+    },
+    "fontSizes": {
+      "h1": "133.2px",
+      "h2": "27.9px",
+      "body": "14.4px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "10px"
+  },
+  "components": {},
+  "images": {
+    "logo": "File saved at: attached_assets/logo.svg",
+    "favicon": "File saved at: attached_assets/favicon.ico",
+    "ogImage": "File saved at: attached_assets/ogImage.jpg"
+  },
+  "__framework_hints": [],
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Strong indicators: header logo linking to homepage, header location, visible, top-left position, highest logo on page, reasonable size, SVG format. Score: 115 (clear winner by 97 points)",
+    "confidence": 0.9
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "secondary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "confidence": 0
+  },
+  "confidence": {
+    "buttons": 0,
+    "colors": 0,
+    "overall": 0
+  }
+}

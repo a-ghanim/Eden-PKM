@@ -5,7 +5,6 @@ import {
   FolderOpen,
   Network,
   MessageCircle,
-  Sparkles,
   BookOpen,
   Clock,
   Star,
@@ -18,7 +17,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -28,13 +26,12 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useEden } from "@/lib/store";
-import { Badge } from "@/components/ui/badge";
 
 const mainNavItems = [
-  { title: "All Saves", url: "/", icon: Home },
+  { title: "Home", url: "/", icon: Home },
   { title: "Search", url: "/search", icon: Search },
   { title: "Collections", url: "/collections", icon: FolderOpen },
-  { title: "Knowledge Graph", url: "/graph", icon: Network },
+  { title: "Graph", url: "/graph", icon: Network },
 ];
 
 const filterItems = [
@@ -47,38 +44,32 @@ const filterItems = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { items, setIsCapturing, setIsChatOpen, selectedIntent, setSelectedIntent } = useEden();
-  
+
   const unreadCount = items.filter((item) => !item.isRead).length;
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
-      <SidebarHeader className="p-4">
+    <Sidebar className="border-r border-sidebar-border/50">
+      <SidebarHeader className="p-4 pb-2">
         <Link href="/">
-          <div className="flex items-center gap-2 cursor-pointer">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="font-serif text-xl font-medium tracking-tight">Eden</span>
-          </div>
+          <h1 className="font-serif text-2xl tracking-tight cursor-pointer hover:opacity-80 transition-opacity">
+            eden
+          </h1>
         </Link>
       </SidebarHeader>
 
-      <SidebarContent>
-        <div className="px-3 py-2">
+      <SidebarContent className="px-2">
+        <div className="p-2">
           <Button
             onClick={() => setIsCapturing(true)}
-            className="w-full justify-start gap-2"
+            className="w-full justify-center gap-2 h-10 rounded-xl bg-accent hover:bg-accent/90"
             data-testid="button-capture"
           >
             <Plus className="w-4 h-4" />
-            Capture URL
+            Capture
           </Button>
         </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Navigate
-          </SidebarGroupLabel>
+        <SidebarGroup className="mt-4">
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
@@ -86,14 +77,15 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
+                    className="rounded-xl"
                   >
-                    <Link href={item.url} data-testid={`link-nav-${item.title.toLowerCase().replace(/\s/g, "-")}`}>
+                    <Link href={item.url} data-testid={`link-nav-${item.title.toLowerCase()}`}>
                       <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
-                      {item.title === "All Saves" && unreadCount > 0 && (
-                        <Badge variant="secondary" className="ml-auto text-2xs">
+                      <span className="font-medium">{item.title}</span>
+                      {item.title === "Home" && unreadCount > 0 && (
+                        <span className="ml-auto text-xs text-muted-foreground">
                           {unreadCount}
-                        </Badge>
+                        </span>
                       )}
                     </Link>
                   </SidebarMenuButton>
@@ -103,10 +95,10 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Filter by Intent
-          </SidebarGroupLabel>
+        <SidebarGroup className="mt-6">
+          <p className="px-3 text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-2">
+            Intent
+          </p>
           <SidebarGroupContent>
             <SidebarMenu>
               {filterItems.map((item) => (
@@ -118,6 +110,7 @@ export function AppSidebar() {
                         selectedIntent === item.intent ? null : item.intent
                       )
                     }
+                    className="rounded-xl"
                     data-testid={`button-filter-${item.intent}`}
                   >
                     <item.icon className="w-4 h-4" />
@@ -130,17 +123,16 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 space-y-2">
-        <Button
-          variant="outline"
-          className="w-full justify-start gap-2"
+      <SidebarFooter className="p-3 space-y-1">
+        <SidebarMenuButton
           onClick={() => setIsChatOpen(true)}
+          className="rounded-xl justify-start"
           data-testid="button-open-chat"
         >
           <MessageCircle className="w-4 h-4" />
-          Ask Eden
-        </Button>
-        <SidebarMenuButton asChild>
+          <span>Ask Eden</span>
+        </SidebarMenuButton>
+        <SidebarMenuButton asChild className="rounded-xl">
           <Link href="/settings" data-testid="link-settings">
             <Settings className="w-4 h-4" />
             <span>Settings</span>

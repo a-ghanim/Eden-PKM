@@ -1,180 +1,206 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, TrendingUp, Clock, Star } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Plus, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEden } from "@/lib/store";
 import { SavedItemCard } from "@/components/SavedItemCard";
+import { Link } from "wouter";
 
 export default function HomePage() {
   const { items, setIsCapturing, setIsChatOpen } = useEden();
 
-  const stats = useMemo(() => {
-    const now = Date.now();
-    const dayMs = 24 * 60 * 60 * 1000;
-    const weekMs = 7 * dayMs;
-
-    return {
-      total: items.length,
-      thisWeek: items.filter((item) => now - item.savedAt < weekMs).length,
-      unread: items.filter((item) => !item.isRead).length,
-      connections: items.reduce((acc, item) => acc + item.connections.length, 0),
+  const categorizedItems = useMemo(() => {
+    const byIntent: Record<string, typeof items> = {
+      read_later: [],
+      reference: [],
+      inspiration: [],
+      tutorial: [],
     };
+    
+    items.forEach((item) => {
+      if (byIntent[item.intent]) {
+        byIntent[item.intent].push(item);
+      }
+    });
+
+    return byIntent;
   }, [items]);
 
   const featuredItem = items[0];
   const recentItems = items.slice(1, 7);
 
-  const recommendations = useMemo(() => {
-    return items
-      .filter((item) => !item.isRead && item.intent === "read_later")
-      .slice(0, 3);
-  }, [items]);
-
   if (items.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4"
-      >
-        <div className="dotted-grid rounded-3xl p-12 max-w-2xl mx-auto">
-          <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1, type: "spring" }}
-            className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center"
-          >
-            <Sparkles className="w-10 h-10 text-primary" />
-          </motion.div>
+      <div className="min-h-screen dotted-grid-subtle flex items-center justify-center p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-2xl mx-auto text-center"
+        >
+          <div className="relative mb-12">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sphere-3d opacity-20 animate-pulse-glow" />
+            <h1 className="font-serif text-6xl md:text-7xl leading-none tracking-tight reveal-up">
+              Your second
+              <br />
+              <span className="text-gradient-accent">brain.</span>
+            </h1>
+          </div>
 
-          <h1 className="font-serif text-display-sm mb-4">
-            Welcome to <span className="text-gradient">Eden</span>
-          </h1>
-
-          <p className="text-lg text-muted-foreground mb-8 max-w-md mx-auto">
-            Your second brain that learns what matters to you. Start by saving your first URL.
+          <p className="text-lg text-muted-foreground mb-10 reveal-up reveal-up-delay-1 max-w-md mx-auto">
+            Eden captures, organizes, and resurfaces knowledge from across the web. Start by saving your first URL.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" onClick={() => setIsCapturing(true)} data-testid="button-empty-capture">
-              <Sparkles className="w-4 h-4 mr-2" />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 reveal-up reveal-up-delay-2">
+            <Button 
+              size="lg" 
+              onClick={() => setIsCapturing(true)} 
+              className="h-12 px-6 rounded-xl bg-accent hover:bg-accent/90"
+              data-testid="button-empty-capture"
+            >
+              <Plus className="w-5 h-5 mr-2" />
               Capture your first URL
             </Button>
-            <Button variant="outline" size="lg" onClick={() => setIsChatOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              onClick={() => setIsChatOpen(true)}
+              className="h-12 px-6 rounded-xl"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
               Ask Eden anything
             </Button>
           </div>
 
-          <div className="mt-12 grid grid-cols-3 gap-4 text-left">
-            <div className="p-4 rounded-xl bg-card/50 border">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
-                <TrendingUp className="w-4 h-4 text-primary" />
-              </div>
-              <h3 className="font-medium text-sm mb-1">Smart Organization</h3>
-              <p className="text-xs text-muted-foreground">
-                AI auto-tags and categorizes everything
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-card/50 border">
-              <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center mb-2">
-                <Clock className="w-4 h-4 text-accent-foreground" />
-              </div>
-              <h3 className="font-medium text-sm mb-1">Context Aware</h3>
-              <p className="text-xs text-muted-foreground">
-                Surfaces content when you need it
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-card/50 border">
-              <div className="w-8 h-8 rounded-lg bg-chart-3/20 flex items-center justify-center mb-2">
-                <Star className="w-4 h-4 text-chart-3" />
-              </div>
-              <h3 className="font-medium text-sm mb-1">Knowledge Graph</h3>
-              <p className="text-xs text-muted-foreground">
-                See how your saves connect
-              </p>
-            </div>
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
+            <div className="w-20 h-20 sphere-glass animate-float opacity-30" />
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-3xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">Total Saves</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-3xl font-bold text-primary">{stats.thisWeek}</div>
-              <p className="text-xs text-muted-foreground">This Week</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-3xl font-bold text-chart-2">{stats.unread}</div>
-              <p className="text-xs text-muted-foreground">Unread</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-3xl font-bold text-chart-3">{stats.connections}</div>
-              <p className="text-xs text-muted-foreground">Connections</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {recommendations.length > 0 && (
+    <div className="min-h-screen">
+      <div className="p-6 md:p-8 space-y-12">
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
         >
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold">Recommended for You</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-serif text-3xl tracking-tight">Recent</h2>
+            <Link href="/search">
+              <Button variant="ghost" size="sm" className="text-muted-foreground gap-1">
+                View all <ArrowRight className="w-3 h-3" />
+              </Button>
+            </Link>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {recommendations.map((item) => (
-              <SavedItemCard key={item.id} item={item} />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" style={{
+            gridAutoRows: "minmax(180px, auto)",
+          }}>
+            {featuredItem && (
+              <SavedItemCard item={featuredItem} variant="featured" />
+            )}
+            {recentItems.slice(0, 4).map((item, index) => (
+              <SavedItemCard 
+                key={item.id} 
+                item={item} 
+                variant={index === 0 ? "wide" : "default"}
+              />
             ))}
           </div>
         </motion.section>
-      )}
 
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25 }}
-      >
-        <h2 className="text-lg font-semibold mb-4">Recent Saves</h2>
-        <div className="grid gap-4" style={{
-          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-          gridAutoRows: "minmax(200px, auto)",
-        }}>
-          {featuredItem && (
-            <SavedItemCard item={featuredItem} variant="featured" />
-          )}
-          {recentItems.map((item) => (
-            <SavedItemCard key={item.id} item={item} />
-          ))}
+        {categorizedItems.read_later.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-serif text-2xl tracking-tight">Read Later</h2>
+              <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                {categorizedItems.read_later.length} items
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {categorizedItems.read_later.slice(0, 4).map((item) => (
+                <SavedItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {categorizedItems.inspiration.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-serif text-2xl tracking-tight">Inspiration</h2>
+              <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                {categorizedItems.inspiration.length} items
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {categorizedItems.inspiration.slice(0, 4).map((item) => (
+                <SavedItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {categorizedItems.tutorial.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-serif text-2xl tracking-tight">Tutorials</h2>
+              <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                {categorizedItems.tutorial.length} items
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {categorizedItems.tutorial.slice(0, 4).map((item) => (
+                <SavedItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {categorizedItems.reference.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-serif text-2xl tracking-tight">Reference</h2>
+              <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                {categorizedItems.reference.length} items
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {categorizedItems.reference.slice(0, 4).map((item) => (
+                <SavedItemCard key={item.id} item={item} />
+              ))}
+            </div>
+          </motion.section>
+        )}
+      </div>
+
+      <footer className="mt-20 p-8 border-t border-border/30">
+        <div className="text-center">
+          <h2 className="font-serif text-8xl md:text-[12rem] tracking-tighter text-muted-foreground/10 select-none">
+            eden
+          </h2>
         </div>
-      </motion.section>
+      </footer>
     </div>
   );
 }

@@ -1,7 +1,5 @@
 import { motion } from "framer-motion";
-import { ExternalLink, Clock, BookOpen, Archive, Star, MoreHorizontal, Trash2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { ExternalLink, MoreHorizontal, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,28 +10,14 @@ import {
 import type { SavedItem } from "@shared/schema";
 import { useEden } from "@/lib/store";
 
-const intentIcons = {
-  read_later: BookOpen,
-  reference: Archive,
-  inspiration: Star,
-  tutorial: Clock,
-};
-
-const intentColors = {
-  read_later: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  reference: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-  inspiration: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  tutorial: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-};
-
 interface SavedItemCardProps {
   item: SavedItem;
-  variant?: "default" | "compact" | "featured";
+  variant?: "default" | "compact" | "featured" | "wide";
+  className?: string;
 }
 
-export function SavedItemCard({ item, variant = "default" }: SavedItemCardProps) {
+export function SavedItemCard({ item, variant = "default", className = "" }: SavedItemCardProps) {
   const { setSelectedItem, deleteItem } = useEden();
-  const IntentIcon = intentIcons[item.intent];
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -42,7 +26,7 @@ export function SavedItemCard({ item, variant = "default" }: SavedItemCardProps)
     
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
@@ -63,28 +47,24 @@ export function SavedItemCard({ item, variant = "default" }: SavedItemCardProps)
   if (variant === "compact") {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={`group cursor-pointer ${className}`}
+        onClick={handleClick}
+        data-testid={`card-item-${item.id}`}
       >
-        <Card
-          className="group cursor-pointer hover-elevate active-elevate-2 transition-all duration-200"
-          onClick={handleClick}
-          data-testid={`card-item-${item.id}`}
-        >
-          <CardContent className="p-3 flex items-center gap-3">
-            {item.favicon && (
-              <img src={item.favicon} alt="" className="w-4 h-4 rounded" />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{item.title}</p>
-              <p className="text-xs text-muted-foreground truncate">{item.domain}</p>
-            </div>
-            <Badge variant="secondary" className={`text-2xs ${intentColors[item.intent]}`}>
-              <IntentIcon className="w-3 h-3" />
-            </Badge>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors">
+          {item.favicon && (
+            <img src={item.favicon} alt="" className="w-5 h-5 rounded" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{item.title}</p>
+            <p className="text-xs text-muted-foreground">{item.domain}</p>
+          </div>
+          <span className="tag-pill-muted text-[10px]">
+            {item.intent.replace("_", " ")}
+          </span>
+        </div>
       </motion.div>
     );
   }
@@ -94,76 +74,116 @@ export function SavedItemCard({ item, variant = "default" }: SavedItemCardProps)
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="col-span-2 row-span-2"
+        transition={{ duration: 0.4 }}
+        className={`bento-featured ${className}`}
       >
-        <Card
-          className="group cursor-pointer hover-elevate active-elevate-2 h-full overflow-hidden transition-all duration-200"
+        <div
+          className="bento-card group cursor-pointer h-full card-hover-lift"
           onClick={handleClick}
           data-testid={`card-item-featured-${item.id}`}
         >
           {item.imageUrl && (
-            <div className="relative h-48 overflow-hidden">
+            <div className="relative h-full min-h-[280px]">
               <img
                 src={item.imageUrl}
                 alt=""
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-3 left-3 right-3">
-                <Badge className={`${intentColors[item.intent]}`}>
-                  <IntentIcon className="w-3 h-3 mr-1" />
-                  {item.intent.replace("_", " ")}
-                </Badge>
+              <div className="absolute inset-0 card-image-overlay" />
+              <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="tag-pill text-[10px]">
+                    {item.intent.replace("_", " ")}
+                  </span>
+                  {item.tags.slice(0, 2).map((tag) => (
+                    <span key={tag} className="tag-pill-muted text-[10px]">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <h3 className="font-serif text-2xl leading-tight text-white mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-white/70 line-clamp-2 mb-3">
+                  {item.summary}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-white/50 flex items-center gap-2">
+                    {item.domain}
+                  </span>
+                  <span className="text-xs text-white/50">
+                    {formatDate(item.savedAt)}
+                  </span>
+                </div>
+              </div>
+              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button variant="secondary" size="icon" className="h-8 w-8 glass">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleOpenExternal}>
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open original
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           )}
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h3 className="font-semibold text-lg leading-tight line-clamp-2">
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (variant === "wide") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`bento-wide ${className}`}
+      >
+        <div
+          className="bento-card group cursor-pointer h-full card-hover-lift overflow-hidden"
+          onClick={handleClick}
+          data-testid={`card-item-wide-${item.id}`}
+        >
+          <div className="flex h-full">
+            {item.imageUrl && (
+              <div className="relative w-1/3 min-w-[160px]">
+                <img
+                  src={item.imageUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div className="flex-1 p-5 flex flex-col">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="tag-pill text-[10px]">
+                  {item.intent.replace("_", " ")}
+                </span>
+              </div>
+              <h3 className="font-serif text-xl leading-tight mb-2">
                 {item.title}
               </h3>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="icon" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleOpenExternal}>
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Open original
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <p className="text-sm text-muted-foreground line-clamp-2 flex-grow">
+                {item.summary}
+              </p>
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
+                <span className="text-xs text-muted-foreground">{item.domain}</span>
+                <span className="text-xs text-muted-foreground">·</span>
+                <span className="text-xs text-muted-foreground">{formatDate(item.savedAt)}</span>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-              {item.summary}
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              {item.tags.slice(0, 3).map((tag) => (
-                <Badge key={tag} variant="outline" className="text-2xs">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-            <div className="flex items-center justify-between mt-3 pt-3 border-t">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                {item.favicon && (
-                  <img src={item.favicon} alt="" className="w-3 h-3 rounded" />
-                )}
-                {item.domain}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {formatDate(item.savedAt)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </motion.div>
     );
   }
@@ -172,83 +192,46 @@ export function SavedItemCard({ item, variant = "default" }: SavedItemCardProps)
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      className={className}
     >
-      <Card
-        className="group cursor-pointer hover-elevate active-elevate-2 transition-all duration-200 h-full"
+      <div
+        className="bento-card group cursor-pointer h-full card-hover-lift"
         onClick={handleClick}
         data-testid={`card-item-${item.id}`}
       >
-        <CardContent className="p-4 flex flex-col h-full">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 min-w-0">
-              {item.favicon && (
-                <img src={item.favicon} alt="" className="w-4 h-4 rounded shrink-0" />
-              )}
-              <span className="text-xs text-muted-foreground truncate">
-                {item.domain}
-              </span>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" className="shrink-0 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MoreHorizontal className="w-3 h-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleOpenExternal}>
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open original
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        {item.imageUrl && (
+          <div className="relative h-32 overflow-hidden">
+            <img
+              src={item.imageUrl}
+              alt=""
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
           </div>
-
-          <h3 className="font-medium text-sm leading-snug line-clamp-2 mb-2 flex-grow-0">
-            {item.title}
-          </h3>
-
-          <p className="text-xs text-muted-foreground line-clamp-2 mb-3 flex-grow">
-            {item.summary}
-          </p>
-
-          <div className="flex items-center gap-1.5 flex-wrap mb-3">
-            {item.tags.slice(0, 2).map((tag) => (
-              <Badge key={tag} variant="outline" className="text-2xs px-1.5 py-0">
-                {tag}
-              </Badge>
-            ))}
-            {item.tags.length > 2 && (
-              <span className="text-2xs text-muted-foreground">
-                +{item.tags.length - 2}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between pt-2 border-t mt-auto">
-            <Badge variant="secondary" className={`text-2xs ${intentColors[item.intent]}`}>
-              <IntentIcon className="w-3 h-3 mr-1" />
+        )}
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="tag-pill text-[10px]">
               {item.intent.replace("_", " ")}
-            </Badge>
-            <span className="text-2xs text-muted-foreground">
-              {formatDate(item.savedAt)}
             </span>
           </div>
-
-          {item.readingProgress > 0 && item.readingProgress < 100 && (
-            <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all"
-                style={{ width: `${item.readingProgress}%` }}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <h3 className="font-medium text-sm leading-snug line-clamp-2 mb-2">
+            {item.title}
+          </h3>
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+            {item.summary}
+          </p>
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-2 border-t border-border/30">
+            <span className="flex items-center gap-1.5">
+              {item.favicon && (
+                <img src={item.favicon} alt="" className="w-3 h-3 rounded" />
+              )}
+              {item.domain}
+            </span>
+            <span>{formatDate(item.savedAt)}</span>
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 }

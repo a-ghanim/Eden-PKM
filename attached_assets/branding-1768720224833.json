@@ -1,0 +1,138 @@
+{
+  "colorScheme": "dark",
+  "fonts": [
+    {
+      "family": "-apple-system",
+      "count": 54
+    },
+    {
+      "family": "BlinkMacSystemFont",
+      "count": 54
+    },
+    {
+      "family": "Segoe UI",
+      "count": 54
+    },
+    {
+      "family": "Roboto",
+      "count": 54
+    },
+    {
+      "family": "sans-serif",
+      "count": 54
+    },
+    {
+      "family": "MR-Camphor",
+      "count": 53
+    },
+    {
+      "family": "Helvetica",
+      "count": 53
+    },
+    {
+      "family": "Arial",
+      "count": 53
+    },
+    {
+      "family": "Apple Color Emoji",
+      "count": 53
+    },
+    {
+      "family": "Segoe UI Emoji",
+      "count": 53
+    }
+  ],
+  "colors": {
+    "primary": "#6D7EEC",
+    "accent": "#2F1518",
+    "background": "#0D0D0D",
+    "textPrimary": "#0D0D0D",
+    "link": "#2F1518"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "-apple-system",
+      "heading": "MR-Camphor"
+    },
+    "fontStacks": {
+      "body": [
+        "-apple-system",
+        "BlinkMacSystemFont",
+        "Segoe UI",
+        "Roboto",
+        "Oxygen",
+        "Ubuntu",
+        "Cantarell",
+        "Fira Sans",
+        "Droid Sans",
+        "Helvetica Neue",
+        "sans-serif"
+      ],
+      "heading": [
+        "MR-Camphor",
+        "-apple-system",
+        "BlinkMacSystemFont",
+        "Segoe UI",
+        "Roboto",
+        "Helvetica",
+        "Arial",
+        "sans-serif",
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol"
+      ],
+      "paragraph": [
+        "MR-Camphor",
+        "-apple-system",
+        "BlinkMacSystemFont",
+        "Segoe UI",
+        "Roboto",
+        "Helvetica",
+        "Arial",
+        "sans-serif",
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol"
+      ]
+    },
+    "fontSizes": {
+      "h1": "32px",
+      "h2": "24px",
+      "body": "22px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "0px"
+  },
+  "components": {},
+  "images": {
+    "logo": "File saved at: attached_assets/logo.svg",
+    "favicon": "https://hq.getmatter.com/favicon.ico",
+    "ogImage": "https://main--matter-website-e45df7.netlify.app/images/og-index.jpg"
+  },
+  "__framework_hints": [],
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Strong indicators: header logo linking to homepage, header location, visible, highest logo on page, src contains logo, class contains logo, reasonable size, SVG format. Score: 115 (clear winner by 122 points)",
+    "confidence": 0.9
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "secondary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "confidence": 0
+  },
+  "confidence": {
+    "buttons": 0,
+    "colors": 0,
+    "overall": 0
+  }
+}

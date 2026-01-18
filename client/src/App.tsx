@@ -33,7 +33,7 @@ function Router() {
 
 function AppLayout() {
   const sidebarStyle = {
-    "--sidebar-width": "16rem",
+    "--sidebar-width": "14rem",
     "--sidebar-width-icon": "3rem",
   } as React.CSSProperties;
 
@@ -41,12 +41,12 @@ function AppLayout() {
     <SidebarProvider style={sidebarStyle}>
       <div className="flex h-screen w-full">
         <AppSidebar />
-        <SidebarInset className="flex flex-col flex-1">
-          <header className="sticky top-0 z-10 flex items-center justify-between gap-4 px-4 py-3 border-b bg-background/95 backdrop-blur">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
+        <SidebarInset className="flex flex-col flex-1 bg-background">
+          <header className="sticky top-0 z-10 flex items-center justify-between gap-4 px-4 py-2 border-b border-border/30 bg-background/80 backdrop-blur-xl">
+            <SidebarTrigger data-testid="button-sidebar-toggle" className="text-muted-foreground" />
             <ThemeToggle />
           </header>
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto">
             <Router />
           </main>
         </SidebarInset>
@@ -61,7 +61,7 @@ function AppLayout() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+      <ThemeProvider defaultTheme="dark">
         <EdenProvider>
           <TooltipProvider>
             <AppLayout />
