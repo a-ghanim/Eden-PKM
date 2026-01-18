@@ -78,7 +78,7 @@ Preferred communication style: Simple, everyday language.
 
 ### AI Services
 - **Anthropic Claude API**: Primary AI provider for content analysis and chat
-  - Environment variables: `AI_INTEGRATIONS_ANTHROPIC_API_KEY`, `AI_INTEGRATIONS_ANTHROPIC_BASE_URL`
+  - Environment variable: `ANTHROPIC_API_KEY` (direct Claude API key)
   - Models used: `claude-sonnet-4-5` for content analysis
 
 ### Database

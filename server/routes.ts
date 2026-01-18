@@ -119,8 +119,7 @@ async function extractContentFromFile(buffer: Buffer, filename: string, mimetype
 }
 
 const anthropic = new Anthropic({
-  apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 async function extractContentFromUrl(url: string): Promise<{ title: string; content: string; domain: string; favicon: string; imageUrl?: string }> {
