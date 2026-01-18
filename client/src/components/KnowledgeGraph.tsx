@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, Globe, ZoomIn, ZoomOut, Maximize2, Filter, X, Tag, Globe2, Lightbulb, ChevronDown, Check, Minus } from "lucide-react";
+import { ExternalLink, Globe, ZoomIn, ZoomOut, Maximize2, Filter, X, Tag, Globe2, Lightbulb, ChevronDown, Check, Minus, Search } from "lucide-react";
 import * as d3 from "d3";
 import { useEden } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,39 @@ function getTagColor(tag: string): string {
   return tagColors[tag];
 }
 
+// Filter chip component - defined outside to prevent hook issues
+function FilterChip({ label, mode, onClick, color }: { label: string; mode: FilterMode; onClick: () => void; color?: string }) {
+  const getModeStyles = () => {
+    if (mode === "include") {
+      return "bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-400";
+    }
+    if (mode === "exclude") {
+      return "bg-rose-500/20 border-rose-500/50 text-rose-600 dark:text-rose-400";
+    }
+    return "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:border-border";
+  };
+  
+  const getModeIcon = () => {
+    if (mode === "include") return <Check className="w-3 h-3" />;
+    if (mode === "exclude") return <X className="w-3 h-3" />;
+    return null;
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${getModeStyles()}`}
+      data-testid={`filter-chip-${label}`}
+    >
+      {color && mode === "neutral" && (
+        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+      )}
+      {getModeIcon()}
+      <span className="truncate max-w-[120px]">{label}</span>
+    </button>
+  );
+}
+
 export function KnowledgeGraph() {
   const { items, setSelectedItem } = useEden();
   const { theme } = useTheme();
@@ -58,6 +91,7 @@ export function KnowledgeGraph() {
   const [transform, setTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilterTab, setActiveFilterTab] = useState<"tags" | "domains" | "concepts">("tags");
+  const [filterSearch, setFilterSearch] = useState("");
   
   // Filter states
   const [tagFilters, setTagFilters] = useState<FilterState>({});
@@ -78,6 +112,21 @@ export function KnowledgeGraph() {
   const allTags = useMemo(() => [...new Set(items.flatMap(item => item.tags))].sort(), [items]);
   const allDomains = useMemo(() => [...new Set(items.map(item => item.domain))].sort(), [items]);
   const allConcepts = useMemo(() => [...new Set(items.flatMap(item => item.concepts || []))].sort(), [items]);
+  
+  // Filtered lists based on search
+  const searchLower = filterSearch.toLowerCase();
+  const filteredTags = useMemo(() => 
+    filterSearch ? allTags.filter(tag => tag.toLowerCase().includes(searchLower)) : allTags,
+    [allTags, filterSearch, searchLower]
+  );
+  const filteredDomains = useMemo(() => 
+    filterSearch ? allDomains.filter(domain => domain.toLowerCase().includes(searchLower)) : allDomains,
+    [allDomains, filterSearch, searchLower]
+  );
+  const filteredConcepts = useMemo(() => 
+    filterSearch ? allConcepts.filter(concept => concept.toLowerCase().includes(searchLower)) : allConcepts,
+    [allConcepts, filterSearch, searchLower]
+  );
   
   // Cycle filter mode: neutral -> include -> exclude -> neutral
   const cycleFilterMode = useCallback((
@@ -366,39 +415,6 @@ export function KnowledgeGraph() {
 
   const uniqueTags = Array.from(new Set(items.flatMap((item) => item.tags))).slice(0, 6);
 
-  // Helper component for filter chips
-  const FilterChip = ({ label, mode, onClick, color }: { label: string; mode: FilterMode; onClick: () => void; color?: string }) => {
-    const getModeStyles = () => {
-      if (mode === "include") {
-        return "bg-emerald-500/20 border-emerald-500/50 text-emerald-600 dark:text-emerald-400";
-      }
-      if (mode === "exclude") {
-        return "bg-rose-500/20 border-rose-500/50 text-rose-600 dark:text-rose-400";
-      }
-      return "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted hover:border-border";
-    };
-    
-    const getModeIcon = () => {
-      if (mode === "include") return <Check className="w-3 h-3" />;
-      if (mode === "exclude") return <X className="w-3 h-3" />;
-      return null;
-    };
-
-    return (
-      <button
-        onClick={onClick}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${getModeStyles()}`}
-        data-testid={`filter-chip-${label}`}
-      >
-        {color && mode === "neutral" && (
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-        )}
-        {getModeIcon()}
-        <span className="truncate max-w-[120px]">{label}</span>
-      </button>
-    );
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -494,6 +510,28 @@ export function KnowledgeGraph() {
                 )}
               </div>
               
+              {/* Search input */}
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder={`Search ${activeFilterTab}...`}
+                  value={filterSearch}
+                  onChange={(e) => setFilterSearch(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2 bg-muted/50 border border-border/50 rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
+                  data-testid="input-filter-search"
+                />
+                {filterSearch && (
+                  <button
+                    onClick={() => setFilterSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    data-testid="button-clear-search"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              
               {/* Filter hint */}
               <div className="flex items-center gap-4 mb-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -510,7 +548,7 @@ export function KnowledgeGraph() {
               {/* Filter chips */}
               <div className="max-h-[140px] overflow-y-auto">
                 <div className="flex flex-wrap gap-2">
-                  {activeFilterTab === "tags" && allTags.map(tag => (
+                  {activeFilterTab === "tags" && filteredTags.map(tag => (
                     <FilterChip
                       key={tag}
                       label={tag}
@@ -519,7 +557,10 @@ export function KnowledgeGraph() {
                       color={getTagColor(tag)}
                     />
                   ))}
-                  {activeFilterTab === "domains" && allDomains.map(domain => (
+                  {activeFilterTab === "tags" && filteredTags.length === 0 && (
+                    <span className="text-sm text-muted-foreground py-2">No tags matching "{filterSearch}"</span>
+                  )}
+                  {activeFilterTab === "domains" && filteredDomains.map(domain => (
                     <FilterChip
                       key={domain}
                       label={domain}
@@ -527,7 +568,10 @@ export function KnowledgeGraph() {
                       onClick={() => cycleFilterMode(domain, domainFilters, setDomainFilters)}
                     />
                   ))}
-                  {activeFilterTab === "concepts" && allConcepts.map(concept => (
+                  {activeFilterTab === "domains" && filteredDomains.length === 0 && (
+                    <span className="text-sm text-muted-foreground py-2">No domains matching "{filterSearch}"</span>
+                  )}
+                  {activeFilterTab === "concepts" && filteredConcepts.map(concept => (
                     <FilterChip
                       key={concept}
                       label={concept}
@@ -535,6 +579,9 @@ export function KnowledgeGraph() {
                       onClick={() => cycleFilterMode(concept, conceptFilters, setConceptFilters)}
                     />
                   ))}
+                  {activeFilterTab === "concepts" && filteredConcepts.length === 0 && (
+                    <span className="text-sm text-muted-foreground py-2">No concepts matching "{filterSearch}"</span>
+                  )}
                 </div>
               </div>
 
