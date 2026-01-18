@@ -87,6 +87,13 @@ export default {
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
       },
+      fontSize: {
+        "2xs": ["0.625rem", { lineHeight: "0.875rem" }],
+        "display-xs": ["clamp(1.5rem, 1.3rem + 1vw, 2rem)", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
+        "display-sm": ["clamp(2rem, 1.5rem + 2.5vw, 3rem)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        "display-md": ["clamp(3rem, 2rem + 5vw, 5rem)", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
+        "display-lg": ["clamp(4rem, 3rem + 5vw, 7rem)", { lineHeight: "1", letterSpacing: "-0.03em" }],
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
