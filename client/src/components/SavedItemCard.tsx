@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { SavedItem } from "@shared/schema";
 import { useEden } from "@/lib/store";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface SavedItemCardProps {
   item: SavedItem;
@@ -18,6 +19,8 @@ interface SavedItemCardProps {
 
 export function SavedItemCard({ item, variant = "default", className = "" }: SavedItemCardProps) {
   const { setSelectedItem, deleteItem } = useEden();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
 
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -62,6 +65,82 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
   };
 
   if (variant === "matter") {
+    // Light mode: Clean card with image on top, content below
+    if (!isDark) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className={`group cursor-pointer ${className}`}
+          onClick={handleClick}
+          data-testid={`card-item-matter-${item.id}`}
+        >
+          <div className="relative rounded-2xl overflow-hidden h-[280px] bg-card shadow-md shadow-black/5 ring-1 ring-border/50 transition-all duration-300 group-hover:shadow-lg group-hover:ring-border">
+            {/* Image section - top portion */}
+            <div className="relative h-[160px] overflow-hidden">
+              {item.imageUrl ? (
+                <img
+                  src={item.imageUrl}
+                  alt=""
+                  className="w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-[1.02]"
+                />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient(item.id)}`}>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
+                </div>
+              )}
+              {/* Domain pill */}
+              <div className="absolute top-2.5 left-2.5">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm border border-black/5 shadow-sm">
+                  {item.favicon ? (
+                    <img src={item.favicon} alt="" className="w-3 h-3 rounded-sm" />
+                  ) : (
+                    <Globe className="w-3 h-3 text-muted-foreground" />
+                  )}
+                  <span className="text-[10px] text-foreground/80 font-medium">
+                    {item.domain}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Content section - bottom portion */}
+            <div className="p-4 h-[120px] flex flex-col">
+              <h3 className="font-semibold text-foreground text-[15px] leading-[1.35] line-clamp-2 mb-2 tracking-tight">
+                {item.title}
+              </h3>
+              <p className="text-[13px] text-muted-foreground line-clamp-2 leading-relaxed flex-1">
+                {item.summary}
+              </p>
+            </div>
+            
+            {/* Hover actions */}
+            <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="secondary" size="icon" className="h-7 w-7 bg-white/90 hover:bg-white border border-black/5 shadow-sm">
+                    <MoreHorizontal className="w-3.5 h-3.5 text-foreground/70" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleOpenExternal}>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Open original
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+    
+    // Dark mode: Overlay style with gradient
     return (
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -71,7 +150,7 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
         onClick={handleClick}
         data-testid={`card-item-matter-${item.id}`}
       >
-        <div className="relative rounded-2xl overflow-hidden h-[280px] shadow-lg shadow-black/10 dark:shadow-black/30 ring-1 ring-white/10 dark:ring-white/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/20 dark:group-hover:shadow-black/40 group-hover:ring-white/20">
+        <div className="relative rounded-2xl overflow-hidden h-[280px] shadow-lg shadow-black/30 ring-1 ring-white/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/40 group-hover:ring-white/20">
           {item.imageUrl ? (
             <img
               src={item.imageUrl}
@@ -138,6 +217,39 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
   }
 
   if (variant === "matter-scroll") {
+    // Light mode: Card style
+    if (!isDark) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className={`group cursor-pointer w-[220px] ${className}`}
+          onClick={handleClick}
+          data-testid={`card-item-scroll-${item.id}`}
+        >
+          <div className="rounded-2xl overflow-hidden h-[180px] bg-card shadow-sm shadow-black/5 ring-1 ring-border/50 transition-all duration-300 group-hover:shadow-md group-hover:ring-border">
+            <div className="relative h-[100px] overflow-hidden">
+              {item.imageUrl ? (
+                <img src={item.imageUrl} alt="" className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]" />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient(item.id)}`} />
+              )}
+              <div className="absolute top-2 left-2">
+                <div className="px-1.5 py-0.5 rounded-full bg-white/90 backdrop-blur-sm border border-black/5 shadow-sm">
+                  <span className="text-[9px] text-foreground/80 font-medium">{item.domain}</span>
+                </div>
+              </div>
+            </div>
+            <div className="p-3">
+              <h3 className="font-semibold text-foreground text-[12px] leading-snug line-clamp-2 tracking-tight">{item.title}</h3>
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+    
+    // Dark mode: Overlay style
     return (
       <motion.div
         initial={{ opacity: 0, x: 10 }}
@@ -147,7 +259,7 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
         onClick={handleClick}
         data-testid={`card-item-scroll-${item.id}`}
       >
-        <div className="relative rounded-2xl overflow-hidden h-[180px] shadow-md shadow-black/10 dark:shadow-black/25 ring-1 ring-white/10 dark:ring-white/5 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-black/15 dark:group-hover:shadow-black/35 group-hover:ring-white/15">
+        <div className="relative rounded-2xl overflow-hidden h-[180px] shadow-md shadow-black/25 ring-1 ring-white/5 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-black/35 group-hover:ring-white/15">
           {item.imageUrl ? (
             <img
               src={item.imageUrl}
@@ -159,23 +271,14 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_50%)]" />
             </div>
           )}
-          {/* Gradient overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-          
-          {/* Domain with glass pill */}
           <div className="absolute top-2.5 left-2.5">
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/35 backdrop-blur-sm border border-white/10">
-              <span className="text-[10px] text-white/85 font-medium tracking-wide">
-                {item.domain}
-              </span>
+              <span className="text-[10px] text-white/85 font-medium tracking-wide">{item.domain}</span>
             </div>
           </div>
-          
-          {/* Title with improved styling */}
           <div className="absolute bottom-0 left-0 right-0 p-3">
-            <h3 className="font-semibold text-white text-[13px] leading-snug line-clamp-2 tracking-tight" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
-              {item.title}
-            </h3>
+            <h3 className="font-semibold text-white text-[13px] leading-snug line-clamp-2 tracking-tight" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>{item.title}</h3>
           </div>
         </div>
       </motion.div>
@@ -183,6 +286,39 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
   }
 
   if (variant === "matter-grid") {
+    // Light mode: Card style
+    if (!isDark) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className={`group cursor-pointer ${className}`}
+          onClick={handleClick}
+          data-testid={`card-item-grid-${item.id}`}
+        >
+          <div className="rounded-2xl overflow-hidden bg-card shadow-sm shadow-black/5 ring-1 ring-border/50 transition-all duration-300 group-hover:shadow-md group-hover:ring-border">
+            <div className="relative aspect-[16/10] overflow-hidden">
+              {item.imageUrl ? (
+                <img src={item.imageUrl} alt="" className="w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.02]" />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${getPlaceholderGradient(item.id)}`} />
+              )}
+              <div className="absolute top-2 left-2">
+                <div className="px-1.5 py-0.5 rounded-full bg-white/90 backdrop-blur-sm border border-black/5 shadow-sm">
+                  <span className="text-[8px] text-foreground/80 font-medium">{item.domain}</span>
+                </div>
+              </div>
+            </div>
+            <div className="p-2.5">
+              <h3 className="font-semibold text-foreground text-[11px] leading-snug line-clamp-2 tracking-tight">{item.title}</h3>
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
+    
+    // Dark mode: Overlay style
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
@@ -192,7 +328,7 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
         onClick={handleClick}
         data-testid={`card-item-grid-${item.id}`}
       >
-        <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md shadow-black/10 dark:shadow-black/25 ring-1 ring-white/10 dark:ring-white/5 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-black/15 dark:group-hover:shadow-black/35 group-hover:ring-white/15">
+        <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md shadow-black/25 ring-1 ring-white/5 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-black/35 group-hover:ring-white/15">
           {item.imageUrl ? (
             <img
               src={item.imageUrl}
@@ -204,23 +340,14 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_50%)]" />
             </div>
           )}
-          {/* Gradient overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-          
-          {/* Domain with glass pill */}
           <div className="absolute top-2 left-2">
             <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/35 backdrop-blur-sm border border-white/10">
-              <span className="text-[9px] text-white/85 font-medium tracking-wide">
-                {item.domain}
-              </span>
+              <span className="text-[9px] text-white/85 font-medium tracking-wide">{item.domain}</span>
             </div>
           </div>
-          
-          {/* Title with improved styling */}
           <div className="absolute bottom-0 left-0 right-0 p-2.5">
-            <h3 className="font-semibold text-white text-xs leading-snug line-clamp-2 tracking-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-              {item.title}
-            </h3>
+            <h3 className="font-semibold text-white text-xs leading-snug line-clamp-2 tracking-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{item.title}</h3>
           </div>
         </div>
       </motion.div>
