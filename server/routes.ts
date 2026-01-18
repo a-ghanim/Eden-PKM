@@ -309,5 +309,96 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/items/batch", async (req: Request, res: Response) => {
+    try {
+      const { urls, intent } = req.body as { urls: string[]; intent: string };
+      
+      if (!urls || !Array.isArray(urls) || urls.length === 0) {
+        return res.status(400).json({ error: "URLs array is required" });
+      }
+
+      if (urls.length > 20) {
+        return res.status(400).json({ error: "Maximum 20 URLs per batch" });
+      }
+
+      const validIntents = ["read_later", "reference", "inspiration", "tutorial"];
+      const safeIntent = validIntents.includes(intent) ? intent : "read_later";
+
+      const results: { url: string; success: boolean; item?: SavedItem; error?: string }[] = [];
+
+      for (const url of urls) {
+        try {
+          const trimmedUrl = url.trim();
+          if (!trimmedUrl) continue;
+
+          const extracted = await extractContentFromUrl(trimmedUrl);
+          const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
+          
+          const existingItems = await storage.getAllItems();
+          const connections = await findConnectionsWithAI(
+            { title: extracted.title, summary: analysis.summary, tags: analysis.tags, concepts: analysis.concepts },
+            existingItems.map((item) => ({
+              id: item.id,
+              title: item.title,
+              summary: item.summary,
+              tags: item.tags,
+              concepts: item.concepts,
+            }))
+          );
+
+          const enrichedData = {
+            title: extracted.title,
+            content: extracted.content,
+            summary: analysis.summary,
+            tags: analysis.tags,
+            concepts: analysis.concepts,
+            domain: extracted.domain,
+            favicon: extracted.favicon,
+            imageUrl: extracted.imageUrl,
+            expiresAt: null,
+          };
+
+          const parseResult = insertSavedItemSchema.safeParse({ url: trimmedUrl, intent: safeIntent });
+          if (!parseResult.success) {
+            throw new Error(fromZodError(parseResult.error).message);
+          }
+
+          const newItem = await storage.createItem(parseResult.data, enrichedData);
+
+          if (connections.length > 0) {
+            await storage.updateItem(newItem.id, { connections });
+            for (const connId of connections) {
+              const connItem = await storage.getItem(connId);
+              if (connItem && !connItem.connections.includes(newItem.id)) {
+                await storage.updateItem(connId, {
+                  connections: [...connItem.connections, newItem.id],
+                });
+              }
+            }
+          }
+
+          const updatedItem = await storage.getItem(newItem.id);
+          results.push({ url: trimmedUrl, success: true, item: updatedItem! });
+        } catch (error) {
+          results.push({ 
+            url, 
+            success: false, 
+            error: error instanceof Error ? error.message : "Failed to process URL" 
+          });
+        }
+      }
+
+      res.status(201).json({
+        total: urls.length,
+        successful: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length,
+        results,
+      });
+    } catch (error) {
+      console.error("Batch import error:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : "Batch import failed" });
+    }
+  });
+
   return httpServer;
 }

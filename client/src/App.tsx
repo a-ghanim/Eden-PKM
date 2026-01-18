@@ -9,8 +9,10 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { EdenProvider } from "@/components/EdenProvider";
 import { AppSidebar } from "@/components/AppSidebar";
 import { CaptureModal } from "@/components/CaptureModal";
+import { BatchImportModal } from "@/components/BatchImportModal";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ReaderMode } from "@/components/ReaderMode";
+import { useEden } from "@/lib/store";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home";
 import SearchPage from "@/pages/search";
@@ -32,6 +34,7 @@ function Router() {
 }
 
 function AppLayout() {
+  const { isBatchImporting, setIsBatchImporting } = useEden();
   const sidebarStyle = {
     "--sidebar-width": "14rem",
     "--sidebar-width-icon": "3rem",
@@ -52,6 +55,7 @@ function AppLayout() {
         </SidebarInset>
       </div>
       <CaptureModal />
+      <BatchImportModal open={isBatchImporting} onOpenChange={setIsBatchImporting} />
       <ChatInterface />
       <ReaderMode />
     </SidebarProvider>

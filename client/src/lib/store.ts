@@ -10,6 +10,7 @@ export interface EdenStore {
   selectedIntent: string | null;
   selectedTags: string[];
   isCapturing: boolean;
+  isBatchImporting: boolean;
   selectedItem: SavedItem | null;
   isChatOpen: boolean;
   setItems: (items: SavedItem[]) => void;
@@ -20,6 +21,7 @@ export interface EdenStore {
   setSelectedIntent: (intent: string | null) => void;
   setSelectedTags: (tags: string[]) => void;
   setIsCapturing: (capturing: boolean) => void;
+  setIsBatchImporting: (importing: boolean) => void;
   setSelectedItem: (item: SavedItem | null) => void;
   setIsChatOpen: (open: boolean) => void;
   addItem: (item: SavedItem) => void;

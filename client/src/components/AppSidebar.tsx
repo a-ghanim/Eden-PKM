@@ -11,6 +11,7 @@ import {
   Archive,
   Plus,
   Settings,
+  Upload,
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,7 +44,7 @@ const filterItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const { items, setIsCapturing, setIsChatOpen, selectedIntent, setSelectedIntent } = useEden();
+  const { items, setIsCapturing, setIsBatchImporting, setIsChatOpen, selectedIntent, setSelectedIntent } = useEden();
 
   const unreadCount = items.filter((item) => !item.isRead).length;
 
@@ -58,7 +59,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2">
-        <div className="p-2">
+        <div className="p-2 space-y-2">
           <Button
             onClick={() => setIsCapturing(true)}
             className="w-full justify-center gap-2 h-10 rounded-xl bg-accent hover:bg-accent/90"
@@ -66,6 +67,15 @@ export function AppSidebar() {
           >
             <Plus className="w-4 h-4" />
             Capture
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setIsBatchImporting(true)}
+            className="w-full justify-center gap-2 h-9 rounded-xl"
+            data-testid="button-batch-import"
+          >
+            <Upload className="w-4 h-4" />
+            Batch Import
           </Button>
         </div>
 

@@ -1,0 +1,74 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "Matter",
+      "count": 25
+    },
+    {
+      "family": "system-ui",
+      "count": 25
+    }
+  ],
+  "colors": {
+    "primary": "#000000",
+    "accent": "#000000",
+    "background": "#F0EFE4",
+    "textPrimary": "#222222",
+    "link": "#000000"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Matter",
+      "heading": "Matter"
+    },
+    "fontStacks": {
+      "body": [
+        "Matter",
+        "system-ui"
+      ],
+      "heading": [
+        "Matter",
+        "system-ui"
+      ],
+      "paragraph": [
+        "Matter",
+        "system-ui"
+      ]
+    },
+    "fontSizes": {
+      "h1": "48px",
+      "h2": "48px",
+      "body": "48px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 8,
+    "borderRadius": "0px"
+  },
+  "components": {},
+  "images": {
+    "logo": null,
+    "favicon": "File saved at: attached_assets/favicon.ico",
+    "ogImage": "File saved at: attached_assets/ogImage.png"
+  },
+  "__framework_hints": [],
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "secondary": {
+      "index": -1,
+      "text": "N/A",
+      "reasoning": "LLM failed"
+    },
+    "confidence": 0
+  },
+  "confidence": {
+    "buttons": 0,
+    "colors": 0,
+    "overall": 0
+  }
+}
