@@ -40,7 +40,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
 
         {/* Content */}
-        <div className="relative z-10 container mx-auto px-8 md:px-16 lg:px-24">
+        <div className="relative z-10 w-full px-8 md:px-16 lg:px-24">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
