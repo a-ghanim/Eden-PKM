@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Anthropic from "@anthropic-ai/sdk";
 import multer from "multer";
+import pLimit from "p-limit";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const pdfParse = require("pdf-parse");
@@ -148,26 +149,14 @@ async function analyzeContentWithAI(content: string, title: string): Promise<{
   try {
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-5",
-      max_tokens: 1024,
+      max_tokens: 512,
       messages: [
         {
           role: "user",
-          content: `Analyze this content and extract meaningful metadata for a personal knowledge base.
+          content: `Analyze: "${title}"
+${content.slice(0, 1500)}
 
-Provide:
-1. A concise 2-3 sentence summary capturing the key insights
-2. 3-5 descriptive tags that capture themes, topics, and categories (use existing common tags when possible to avoid fragmentation)
-3. 3-5 key concepts mentioned (specific people, technologies, companies, methodologies, frameworks, or notable ideas)
-
-Title: ${title}
-Content: ${content.slice(0, 3000)}
-
-Respond in JSON format:
-{
-  "summary": "...",
-  "tags": ["...", "..."],
-  "concepts": ["...", "..."]
-}`,
+JSON only: {"summary":"2 sentences max","tags":["3-5 topic tags"],"concepts":["3-5 key entities/ideas"]}`,
         },
       ],
     });
@@ -197,37 +186,20 @@ async function findConnectionsWithAI(newItem: { title: string; summary: string; 
   if (existingItems.length === 0) return { connections: [], reasons: {} };
   
   try {
+    const itemList = existingItems.slice(0, 10).map((item) => 
+      `${item.id}|${item.title}|${item.tags.slice(0, 3).join(",")}`
+    ).join("\n");
+
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-5",
-      max_tokens: 1024,
+      max_tokens: 256,
       messages: [
         {
           role: "user",
-          content: `Find meaningful connections between a new item and existing items. Look for:
-- Thematic overlaps (similar topics, ideas, or domains)
-- Conceptual relationships (one builds on, challenges, or complements another)
-- Interesting unexpected connections (surprising links that provide new insights)
+          content: `New: "${newItem.title}" [${newItem.tags.join(",")}]
+Items:\n${itemList}
 
-New Item:
-Title: ${newItem.title}
-Summary: ${newItem.summary}
-Tags: ${newItem.tags.join(", ")}
-Concepts: ${newItem.concepts.join(", ")}
-
-Existing Items:
-${existingItems.map((item, i) => `${i + 1}. ID: ${item.id}
-   Title: ${item.title}
-   Summary: ${item.summary}
-   Tags: ${item.tags.join(", ")}
-   Concepts: ${item.concepts.join(", ")}`).join("\n\n")}
-
-Return a JSON object with connected item IDs and brief explanations of why they're connected (max 5 connections):
-{
-  "connections": {
-    "item_id_1": "Both explore component-based architecture patterns",
-    "item_id_2": "This challenges assumptions made in that article about state management"
-  }
-}`,
+JSON: {"connections":{"id":"why connected"}} max 3`,
         },
       ],
     });
@@ -447,39 +419,41 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/items/batch", async (req: Request, res: Response) => {
+  app.post("/api/items/batch/stream", async (req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    const sendEvent = (data: object) => {
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
     try {
       const { urls } = req.body as { urls: string[] };
       
       if (!urls || !Array.isArray(urls) || urls.length === 0) {
-        return res.status(400).json({ error: "URLs array is required" });
+        sendEvent({ type: "error", message: "URLs array is required" });
+        res.end();
+        return;
       }
 
-      if (urls.length > 20) {
-        return res.status(400).json({ error: "Maximum 20 URLs per batch" });
-      }
+      const validUrls = urls.slice(0, 50).map(u => u.trim()).filter(Boolean);
+      sendEvent({ type: "start", total: validUrls.length });
 
-      const results: { url: string; success: boolean; item?: SavedItem; error?: string }[] = [];
+      const limit = pLimit(3);
+      let successCount = 0;
+      let failCount = 0;
 
-      for (const url of urls) {
+      const processUrl = async (url: string, index: number) => {
         try {
-          const trimmedUrl = url.trim();
-          if (!trimmedUrl) continue;
-
-          const extracted = await extractContentFromUrl(trimmedUrl);
+          const extracted = await extractContentFromUrl(url);
           const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
-          
-          const existingItems = await storage.getAllItems();
-          const connectionResult = await findConnectionsWithAI(
-            { title: extracted.title, summary: analysis.summary, tags: analysis.tags, concepts: analysis.concepts },
-            existingItems.map((item) => ({
-              id: item.id,
-              title: item.title,
-              summary: item.summary,
-              tags: item.tags,
-              concepts: item.concepts,
-            }))
-          );
+
+          const parseResult = insertSavedItemSchema.safeParse({ url });
+          if (!parseResult.success) {
+            throw new Error("Invalid URL");
+          }
 
           const enrichedData = {
             title: extracted.title,
@@ -493,30 +467,135 @@ export async function registerRoutes(
             expiresAt: null,
           };
 
-          const parseResult = insertSavedItemSchema.safeParse({ url: trimmedUrl });
+          const newItem = await storage.createItem(parseResult.data, enrichedData);
+          successCount++;
+          
+          sendEvent({ 
+            type: "item", 
+            index, 
+            item: newItem,
+            progress: { success: successCount, failed: failCount, total: validUrls.length }
+          });
+
+          const existingItems = await storage.getAllItems();
+          if (existingItems.length > 1) {
+            const connectionResult = await findConnectionsWithAI(
+              { title: newItem.title, summary: newItem.summary, tags: newItem.tags, concepts: newItem.concepts },
+              existingItems.filter(i => i.id !== newItem.id).map((item) => ({
+                id: item.id,
+                title: item.title,
+                summary: item.summary,
+                tags: item.tags,
+                concepts: item.concepts,
+              }))
+            );
+
+            if (connectionResult.connections.length > 0) {
+              await storage.updateItem(newItem.id, { 
+                connections: connectionResult.connections,
+                connectionReasons: connectionResult.reasons,
+              });
+              for (const connId of connectionResult.connections) {
+                const connItem = await storage.getItem(connId);
+                if (connItem && !connItem.connections.includes(newItem.id)) {
+                  await storage.updateItem(connId, {
+                    connections: [...connItem.connections, newItem.id],
+                  });
+                }
+              }
+              const updatedItem = await storage.getItem(newItem.id);
+              sendEvent({ type: "connections", itemId: newItem.id, connections: connectionResult.connections, item: updatedItem });
+            }
+          }
+        } catch (error) {
+          failCount++;
+          sendEvent({ 
+            type: "error", 
+            index, 
+            url, 
+            message: error instanceof Error ? error.message : "Failed",
+            progress: { success: successCount, failed: failCount, total: validUrls.length }
+          });
+        }
+      };
+
+      await Promise.all(validUrls.map((url, i) => limit(() => processUrl(url, i))));
+      
+      sendEvent({ type: "complete", success: successCount, failed: failCount, total: validUrls.length });
+      res.end();
+    } catch (error) {
+      sendEvent({ type: "error", message: error instanceof Error ? error.message : "Batch import failed" });
+      res.end();
+    }
+  });
+
+  app.post("/api/items/batch", async (req: Request, res: Response) => {
+    try {
+      const { urls } = req.body as { urls: string[] };
+      
+      if (!urls || !Array.isArray(urls) || urls.length === 0) {
+        return res.status(400).json({ error: "URLs array is required" });
+      }
+
+      const validUrls = urls.slice(0, 50).map(u => u.trim()).filter(Boolean);
+      const limit = pLimit(3);
+      const results: { url: string; success: boolean; item?: SavedItem; error?: string }[] = [];
+
+      const processUrl = async (url: string) => {
+        try {
+          const extracted = await extractContentFromUrl(url);
+          const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
+
+          const parseResult = insertSavedItemSchema.safeParse({ url });
           if (!parseResult.success) {
             throw new Error(fromZodError(parseResult.error).message);
           }
 
+          const enrichedData = {
+            title: extracted.title,
+            content: extracted.content,
+            summary: analysis.summary,
+            tags: analysis.tags,
+            concepts: analysis.concepts,
+            domain: extracted.domain,
+            favicon: extracted.favicon,
+            imageUrl: extracted.imageUrl,
+            expiresAt: null,
+          };
+
           const newItem = await storage.createItem(parseResult.data, enrichedData);
 
-          if (connectionResult.connections.length > 0) {
-            await storage.updateItem(newItem.id, { 
-              connections: connectionResult.connections,
-              connectionReasons: connectionResult.reasons,
-            });
-            for (const connId of connectionResult.connections) {
-              const connItem = await storage.getItem(connId);
-              if (connItem && !connItem.connections.includes(newItem.id)) {
-                await storage.updateItem(connId, {
-                  connections: [...connItem.connections, newItem.id],
-                });
+          const existingItems = await storage.getAllItems();
+          if (existingItems.length > 1) {
+            const connectionResult = await findConnectionsWithAI(
+              { title: newItem.title, summary: newItem.summary, tags: newItem.tags, concepts: newItem.concepts },
+              existingItems.filter(i => i.id !== newItem.id).map((item) => ({
+                id: item.id,
+                title: item.title,
+                summary: item.summary,
+                tags: item.tags,
+                concepts: item.concepts,
+              }))
+            );
+
+            if (connectionResult.connections.length > 0) {
+              await storage.updateItem(newItem.id, { 
+                connections: connectionResult.connections,
+                connectionReasons: connectionResult.reasons,
+              });
+              for (const connId of connectionResult.connections) {
+                const connItem = await storage.getItem(connId);
+                if (connItem && !connItem.connections.includes(newItem.id)) {
+                  await storage.updateItem(connId, {
+                    connections: [...connItem.connections, newItem.id],
+                  });
+                }
               }
             }
           }
 
           const updatedItem = await storage.getItem(newItem.id);
-          results.push({ url: trimmedUrl, success: true, item: updatedItem! });
+          results.push({ url, success: true, item: updatedItem! });
         } catch (error) {
           results.push({ 
             url, 
@@ -524,10 +603,12 @@ export async function registerRoutes(
             error: error instanceof Error ? error.message : "Failed to process URL" 
           });
         }
-      }
+      };
+
+      await Promise.all(validUrls.map(url => limit(() => processUrl(url))));
 
       res.status(201).json({
-        total: urls.length,
+        total: validUrls.length,
         successful: results.filter(r => r.success).length,
         failed: results.filter(r => !r.success).length,
         results,
