@@ -144,53 +144,35 @@ export function ReaderMode() {
                   transition={{ delay: 0.15 }}
                   className="p-6 rounded-xl bg-primary/5 border border-primary/10"
                 >
-                  <h3 className="text-sm font-medium text-primary mb-2">AI Summary</h3>
+                  <h3 className="text-sm font-medium text-primary mb-2">AI Analysis</h3>
                   <p className="text-foreground leading-relaxed">
                     {selectedItem.summary}
                   </p>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="prose prose-lg dark:prose-invert max-w-none"
-                >
-                  {selectedItem.content.split("\n\n").map((paragraph, index) => (
-                    <p key={index} className="leading-relaxed text-foreground/90">
-                      {paragraph}
-                    </p>
-                  ))}
-                </motion.div>
-
-                {selectedItem.concepts.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.25 }}
-                    className="p-6 rounded-xl bg-muted/50"
-                  >
-                    <h3 className="text-sm font-medium mb-3">Key Concepts</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedItem.concepts.map((concept) => (
-                        <Badge key={concept} variant="outline">
-                          {concept}
-                        </Badge>
-                      ))}
+                  
+                  {selectedItem.concepts.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-primary/10">
+                      <h4 className="text-xs font-medium text-muted-foreground mb-2">Key Concepts</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedItem.concepts.map((concept) => (
+                          <Badge key={concept} variant="outline">
+                            {concept}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </motion.div>
-                )}
+                  )}
+                </motion.div>
               </article>
 
               {relatedItems.length > 0 && (
                 <motion.section
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="mt-12 pt-8 border-t"
+                  transition={{ delay: 0.2 }}
+                  className="mt-8"
                 >
                   <h2 className="text-lg font-semibold mb-4">Related in Eden</h2>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="space-y-3">
                     {relatedItems.map((item) => (
                       <SavedItemCard key={item.id} item={item} variant="compact" />
                     ))}
