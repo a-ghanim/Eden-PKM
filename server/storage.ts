@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 export interface IStorage {
   getAllItems(): Promise<SavedItem[]>;
   getItem(id: string): Promise<SavedItem | undefined>;
-  createItem(insertData: InsertSavedItem, enrichedData: Omit<SavedItem, "id" | "savedAt" | "lastAccessed" | "readingProgress" | "notes" | "highlights" | "connections" | "isRead">): Promise<SavedItem>;
+  createItem(insertData: InsertSavedItem, enrichedData: { title: string; content: string; summary: string; tags: string[]; concepts: string[]; domain: string; favicon?: string; imageUrl?: string; expiresAt: number | null }): Promise<SavedItem>;
   updateItem(id: string, updates: UpdateSavedItem): Promise<SavedItem | undefined>;
   deleteItem(id: string): Promise<boolean>;
   searchItems(query: string): Promise<SavedItem[]>;
@@ -44,7 +44,6 @@ export class MemStorage implements IStorage {
         notes: "",
         highlights: [],
         connections: [],
-        intent: "tutorial",
         expiresAt: null,
         domain: "react.dev",
         favicon: "https://react.dev/favicon.ico",
@@ -65,7 +64,6 @@ export class MemStorage implements IStorage {
         notes: "Key insight: solve your own problems first",
         highlights: [{ text: "The way to get startup ideas is not to try to think of startup ideas", position: 0 }],
         connections: [],
-        intent: "reference",
         expiresAt: null,
         domain: "paulgraham.com",
         favicon: "https://paulgraham.com/favicon.ico",
@@ -86,7 +84,6 @@ export class MemStorage implements IStorage {
         notes: "",
         highlights: [],
         connections: [],
-        intent: "read_later",
         expiresAt: null,
         domain: "web.dev",
         favicon: "https://web.dev/favicon.ico",
@@ -107,7 +104,6 @@ export class MemStorage implements IStorage {
         notes: "",
         highlights: [],
         connections: [],
-        intent: "inspiration",
         expiresAt: null,
         domain: "dribbble.com",
         favicon: "https://dribbble.com/favicon.ico",
@@ -128,7 +124,6 @@ export class MemStorage implements IStorage {
         notes: "",
         highlights: [],
         connections: [],
-        intent: "reference",
         expiresAt: null,
         domain: "anthropic.com",
         favicon: "https://docs.anthropic.com/favicon.ico",
@@ -149,7 +144,6 @@ export class MemStorage implements IStorage {
         notes: "Great for rapid prototyping",
         highlights: [],
         connections: [],
-        intent: "tutorial",
         expiresAt: null,
         domain: "tailwindcss.com",
         favicon: "https://tailwindcss.com/favicon.ico",
@@ -174,13 +168,12 @@ export class MemStorage implements IStorage {
     return this.items.get(id);
   }
 
-  async createItem(insertData: InsertSavedItem, enrichedData: Omit<SavedItem, "id" | "savedAt" | "lastAccessed" | "readingProgress" | "notes" | "highlights" | "connections" | "isRead">): Promise<SavedItem> {
+  async createItem(insertData: InsertSavedItem, enrichedData: { title: string; content: string; summary: string; tags: string[]; concepts: string[]; domain: string; favicon?: string; imageUrl?: string; expiresAt: number | null }): Promise<SavedItem> {
     const id = randomUUID();
     const now = Date.now();
     const newItem: SavedItem = {
       id,
       url: insertData.url,
-      intent: insertData.intent,
       title: enrichedData.title,
       content: enrichedData.content,
       summary: enrichedData.summary,

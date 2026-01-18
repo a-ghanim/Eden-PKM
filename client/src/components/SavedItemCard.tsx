@@ -62,7 +62,7 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
             <p className="text-xs text-muted-foreground">{item.domain}</p>
           </div>
           <span className="tag-pill-muted text-[10px]">
-            {item.intent.replace("_", " ")}
+            {item.tags[0] || "Saved"}
           </span>
         </div>
       </motion.div>
@@ -91,12 +91,9 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
               />
               <div className="absolute inset-0 card-image-overlay" />
               <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="tag-pill text-[10px]">
-                    {item.intent.replace("_", " ")}
-                  </span>
-                  {item.tags.slice(0, 2).map((tag) => (
-                    <span key={tag} className="tag-pill-muted text-[10px]">
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  {item.tags.slice(0, 3).map((tag, i) => (
+                    <span key={tag} className={i === 0 ? "tag-pill text-[10px]" : "tag-pill-muted text-[10px]"}>
                       {tag}
                     </span>
                   ))}
@@ -108,10 +105,10 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
                   {item.summary}
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/50 flex items-center gap-2">
+                  <span className="text-xs text-white/60 flex items-center gap-2">
                     {item.domain}
                   </span>
-                  <span className="text-xs text-white/50">
+                  <span className="text-xs text-white/60">
                     {formatDate(item.savedAt)}
                   </span>
                 </div>
@@ -165,10 +162,12 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
               </div>
             )}
             <div className="flex-1 p-5 flex flex-col">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="tag-pill text-[10px]">
-                  {item.intent.replace("_", " ")}
-                </span>
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                {item.tags.slice(0, 2).map((tag, i) => (
+                  <span key={tag} className={i === 0 ? "tag-pill text-[10px]" : "tag-pill-muted text-[10px]"}>
+                    {tag}
+                  </span>
+                ))}
               </div>
               <h3 className="font-serif text-xl leading-tight mb-2">
                 {item.title}
@@ -210,10 +209,12 @@ export function SavedItemCard({ item, variant = "default", className = "" }: Sav
           </div>
         )}
         <div className="p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="tag-pill text-[10px]">
-              {item.intent.replace("_", " ")}
-            </span>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            {item.tags.slice(0, 2).map((tag, i) => (
+              <span key={tag} className={i === 0 ? "tag-pill text-[10px]" : "tag-pill-muted text-[10px]"}>
+                {tag}
+              </span>
+            ))}
           </div>
           <h3 className="font-medium text-sm leading-snug line-clamp-2 mb-2">
             {item.title}

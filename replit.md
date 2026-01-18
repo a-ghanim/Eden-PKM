@@ -47,15 +47,16 @@ Preferred communication style: Simple, everyday language.
 - **Validation**: Zod schemas with `drizzle-zod` integration for type-safe data handling
 
 ### Key Data Models
-- **SavedItem**: Core entity for captured content (URL, title, content, summary, tags, concepts, intent, reading progress)
+- **SavedItem**: Core entity for captured content (URL, title, content, summary, tags, concepts, connections, connectionReasons, reading progress)
 - **Collection**: Groups of related items (auto-generated from tags/concepts)
 - **Concept**: Extracted key ideas, people, technologies from content
 - **ChatMessage**: Conversation history for AI assistant interactions
 
 ### Application Features
-- **Universal Capture**: Save URLs with intent classification (read later, reference, inspiration, tutorial)
-- **AI Analysis**: Automatic content summarization, tagging, and concept extraction
-- **Knowledge Graph**: Visual representation of connections between saved content
+- **Universal Capture**: Save URLs, batch import multiple URLs, upload files (HTML, PDF, TXT, MD, DOC)
+- **AI Analysis**: Automatic content summarization, tagging, concept extraction, and semantic connection discovery
+- **Connection Reasoning**: AI explains why items are connected (stored in connectionReasons field)
+- **Knowledge Graph**: Visual representation of connections with emergent clustering based on semantic relationships
 - **Smart Collections**: Auto-generated groupings based on shared tags and concepts
 - **AI Chat**: Context-aware assistant that can query saved knowledge base
 - **Reader Mode**: Focused reading experience with related content suggestions

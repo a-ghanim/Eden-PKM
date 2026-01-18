@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-export const intentTypes = ["read_later", "reference", "inspiration", "tutorial"] as const;
-export type IntentType = typeof intentTypes[number];
-
 export const highlightSchema = z.object({
   text: z.string(),
   position: z.number(),
@@ -31,7 +28,7 @@ export const savedItemSchema = z.object({
   notes: z.string(),
   highlights: z.array(highlightSchema),
   connections: z.array(z.string()),
-  intent: z.enum(intentTypes),
+  connectionReasons: z.record(z.string(), z.string()).optional(),
   expiresAt: z.number().nullable(),
   domain: z.string(),
   favicon: z.string().optional(),
@@ -50,7 +47,6 @@ export const insertSavedItemSchema = z.object({
       return false;
     }
   }, { message: "Invalid URL. Must be http, https, or file protocol." }),
-  intent: z.enum(intentTypes),
 });
 
 export type InsertSavedItem = z.infer<typeof insertSavedItemSchema>;

@@ -108,7 +108,6 @@ async function analyzeContentWithAI(content: string, title: string): Promise<{
   summary: string;
   tags: string[];
   concepts: string[];
-  intent: "read_later" | "reference" | "inspiration" | "tutorial";
 }> {
   try {
     const message = await anthropic.messages.create({
@@ -117,25 +116,21 @@ async function analyzeContentWithAI(content: string, title: string): Promise<{
       messages: [
         {
           role: "user",
-          content: `Analyze this web content and provide:
-1. A concise 2-3 sentence summary
-2. 3-5 relevant tags (single words or short phrases)
-3. 3-5 key concepts mentioned (people, technologies, companies, ideas)
-4. The most appropriate intent category:
-   - "read_later": Articles, blog posts, long-form content to read when you have time
-   - "reference": Documentation, API docs, technical references to look up later
-   - "inspiration": Design examples, portfolios, creative work, visual inspiration
-   - "tutorial": How-to guides, step-by-step instructions, courses, learning materials
+          content: `Analyze this content and extract meaningful metadata for a personal knowledge base.
+
+Provide:
+1. A concise 2-3 sentence summary capturing the key insights
+2. 3-5 descriptive tags that capture themes, topics, and categories (use existing common tags when possible to avoid fragmentation)
+3. 3-5 key concepts mentioned (specific people, technologies, companies, methodologies, frameworks, or notable ideas)
 
 Title: ${title}
-Content: ${content.slice(0, 2000)}
+Content: ${content.slice(0, 3000)}
 
 Respond in JSON format:
 {
   "summary": "...",
   "tags": ["...", "..."],
-  "concepts": ["...", "..."],
-  "intent": "read_later" | "reference" | "inspiration" | "tutorial"
+  "concepts": ["...", "..."]
 }`,
         },
       ],
@@ -151,7 +146,6 @@ Respond in JSON format:
       summary: "Content saved for later reading.",
       tags: ["Uncategorized"],
       concepts: [],
-      intent: "read_later" as const,
     };
   } catch (error) {
     console.error("AI analysis failed:", error);
@@ -159,22 +153,24 @@ Respond in JSON format:
       summary: "Content captured successfully. AI analysis unavailable.",
       tags: ["Uncategorized"],
       concepts: [],
-      intent: "read_later" as const,
     };
   }
 }
 
-async function findConnectionsWithAI(newItem: { title: string; summary: string; tags: string[]; concepts: string[] }, existingItems: { id: string; title: string; summary: string; tags: string[]; concepts: string[] }[]): Promise<string[]> {
-  if (existingItems.length === 0) return [];
+async function findConnectionsWithAI(newItem: { title: string; summary: string; tags: string[]; concepts: string[] }, existingItems: { id: string; title: string; summary: string; tags: string[]; concepts: string[] }[]): Promise<{ connections: string[]; reasons: Record<string, string> }> {
+  if (existingItems.length === 0) return { connections: [], reasons: {} };
   
   try {
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-5",
-      max_tokens: 512,
+      max_tokens: 1024,
       messages: [
         {
           role: "user",
-          content: `Find connections between a new item and existing items based on related topics, concepts, or themes.
+          content: `Find meaningful connections between a new item and existing items. Look for:
+- Thematic overlaps (similar topics, ideas, or domains)
+- Conceptual relationships (one builds on, challenges, or complements another)
+- Interesting unexpected connections (surprising links that provide new insights)
 
 New Item:
 Title: ${newItem.title}
@@ -183,23 +179,38 @@ Tags: ${newItem.tags.join(", ")}
 Concepts: ${newItem.concepts.join(", ")}
 
 Existing Items:
-${existingItems.map((item, i) => `${i + 1}. ID: ${item.id}, Title: ${item.title}, Tags: ${item.tags.join(", ")}`).join("\n")}
+${existingItems.map((item, i) => `${i + 1}. ID: ${item.id}
+   Title: ${item.title}
+   Summary: ${item.summary}
+   Tags: ${item.tags.join(", ")}
+   Concepts: ${item.concepts.join(", ")}`).join("\n\n")}
 
-Return a JSON array of IDs that are related to the new item (max 3):
-["id1", "id2"]`,
+Return a JSON object with connected item IDs and brief explanations of why they're connected (max 5 connections):
+{
+  "connections": {
+    "item_id_1": "Both explore component-based architecture patterns",
+    "item_id_2": "This challenges assumptions made in that article about state management"
+  }
+}`,
         },
       ],
     });
 
     const responseText = message.content[0].type === "text" ? message.content[0].text : "";
-    const jsonMatch = responseText.match(/\[[\s\S]*?\]/);
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.connections && typeof parsed.connections === "object") {
+        return {
+          connections: Object.keys(parsed.connections),
+          reasons: parsed.connections,
+        };
+      }
     }
-    return [];
+    return { connections: [], reasons: {} };
   } catch (error) {
     console.error("Connection finding failed:", error);
-    return [];
+    return { connections: [], reasons: {} };
   }
 }
 
@@ -249,7 +260,8 @@ export async function registerRoutes(
 
   app.get("/api/items/:id", async (req: Request, res: Response) => {
     try {
-      const item = await storage.getItem(req.params.id);
+      const id = req.params.id as string;
+      const item = await storage.getItem(id);
       if (!item) {
         return res.status(404).json({ error: "Item not found" });
       }
@@ -273,7 +285,7 @@ export async function registerRoutes(
       const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
       
       const existingItems = await storage.getAllItems();
-      const connections = await findConnectionsWithAI(
+      const connectionResult = await findConnectionsWithAI(
         { title: extracted.title, summary: analysis.summary, tags: analysis.tags, concepts: analysis.concepts },
         existingItems.map((item) => ({
           id: item.id,
@@ -298,9 +310,12 @@ export async function registerRoutes(
 
       const newItem = await storage.createItem(insertData, enrichedData);
 
-      if (connections.length > 0) {
-        await storage.updateItem(newItem.id, { connections });
-        for (const connId of connections) {
+      if (connectionResult.connections.length > 0) {
+        await storage.updateItem(newItem.id, { 
+          connections: connectionResult.connections,
+          connectionReasons: connectionResult.reasons,
+        });
+        for (const connId of connectionResult.connections) {
           const connItem = await storage.getItem(connId);
           if (connItem && !connItem.connections.includes(newItem.id)) {
             await storage.updateItem(connId, {
@@ -320,12 +335,13 @@ export async function registerRoutes(
 
   app.patch("/api/items/:id", async (req: Request, res: Response) => {
     try {
+      const id = req.params.id as string;
       const parseResult = updateSavedItemSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ error: fromZodError(parseResult.error).message });
       }
 
-      const updated = await storage.updateItem(req.params.id, parseResult.data);
+      const updated = await storage.updateItem(id, parseResult.data);
       if (!updated) {
         return res.status(404).json({ error: "Item not found" });
       }
@@ -337,7 +353,8 @@ export async function registerRoutes(
 
   app.delete("/api/items/:id", async (req: Request, res: Response) => {
     try {
-      const deleted = await storage.deleteItem(req.params.id);
+      const id = req.params.id as string;
+      const deleted = await storage.deleteItem(id);
       if (!deleted) {
         return res.status(404).json({ error: "Item not found" });
       }
@@ -396,7 +413,7 @@ export async function registerRoutes(
 
   app.post("/api/items/batch", async (req: Request, res: Response) => {
     try {
-      const { urls, intent } = req.body as { urls: string[]; intent: string };
+      const { urls } = req.body as { urls: string[] };
       
       if (!urls || !Array.isArray(urls) || urls.length === 0) {
         return res.status(400).json({ error: "URLs array is required" });
@@ -405,9 +422,6 @@ export async function registerRoutes(
       if (urls.length > 20) {
         return res.status(400).json({ error: "Maximum 20 URLs per batch" });
       }
-
-      const validIntents = ["read_later", "reference", "inspiration", "tutorial"];
-      const safeIntent = validIntents.includes(intent) ? intent : "read_later";
 
       const results: { url: string; success: boolean; item?: SavedItem; error?: string }[] = [];
 
@@ -420,7 +434,7 @@ export async function registerRoutes(
           const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
           
           const existingItems = await storage.getAllItems();
-          const connections = await findConnectionsWithAI(
+          const connectionResult = await findConnectionsWithAI(
             { title: extracted.title, summary: analysis.summary, tags: analysis.tags, concepts: analysis.concepts },
             existingItems.map((item) => ({
               id: item.id,
@@ -443,16 +457,19 @@ export async function registerRoutes(
             expiresAt: null,
           };
 
-          const parseResult = insertSavedItemSchema.safeParse({ url: trimmedUrl, intent: safeIntent });
+          const parseResult = insertSavedItemSchema.safeParse({ url: trimmedUrl });
           if (!parseResult.success) {
             throw new Error(fromZodError(parseResult.error).message);
           }
 
           const newItem = await storage.createItem(parseResult.data, enrichedData);
 
-          if (connections.length > 0) {
-            await storage.updateItem(newItem.id, { connections });
-            for (const connId of connections) {
+          if (connectionResult.connections.length > 0) {
+            await storage.updateItem(newItem.id, { 
+              connections: connectionResult.connections,
+              connectionReasons: connectionResult.reasons,
+            });
+            for (const connId of connectionResult.connections) {
               const connItem = await storage.getItem(connId);
               if (connItem && !connItem.connections.includes(newItem.id)) {
                 await storage.updateItem(connId, {
@@ -501,7 +518,7 @@ export async function registerRoutes(
           const extracted = await extractContentFromFile(file.buffer, file.originalname, file.mimetype);
           const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
           
-          const connections = await findConnectionsWithAI(
+          const connectionResult = await findConnectionsWithAI(
             { title: extracted.title, summary: analysis.summary, tags: analysis.tags, concepts: analysis.concepts },
             existingItems.map((item) => ({
               id: item.id,
@@ -514,7 +531,7 @@ export async function registerRoutes(
 
           const fileUrl = `file://${encodeURIComponent(file.originalname)}`;
           
-          const parseResult = insertSavedItemSchema.safeParse({ url: fileUrl, intent: analysis.intent });
+          const parseResult = insertSavedItemSchema.safeParse({ url: fileUrl });
           if (!parseResult.success) {
             throw new Error(fromZodError(parseResult.error).message);
           }
@@ -533,9 +550,12 @@ export async function registerRoutes(
 
           const newItem = await storage.createItem(parseResult.data, enrichedData);
 
-          if (connections.length > 0) {
-            await storage.updateItem(newItem.id, { connections });
-            for (const connId of connections) {
+          if (connectionResult.connections.length > 0) {
+            await storage.updateItem(newItem.id, { 
+              connections: connectionResult.connections,
+              connectionReasons: connectionResult.reasons,
+            });
+            for (const connId of connectionResult.connections) {
               const connItem = await storage.getItem(connId);
               if (connItem && !connItem.connections.includes(newItem.id)) {
                 await storage.updateItem(connId, {

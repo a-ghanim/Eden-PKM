@@ -355,8 +355,8 @@
   .card-image-overlay {
     background: linear-gradient(180deg, 
       transparent 0%, 
-      hsl(var(--background) / 0.4) 60%,
-      hsl(var(--background) / 0.95) 100%);
+      rgba(0, 0, 0, 0.5) 60%,
+      rgba(0, 0, 0, 0.85) 100%);
   }
 
   .card-hover-lift {
