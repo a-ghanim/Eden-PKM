@@ -11,6 +11,7 @@ export interface EdenStore {
   selectedTags: string[];
   isCapturing: boolean;
   isBatchImporting: boolean;
+  isFileUploading: boolean;
   selectedItem: SavedItem | null;
   isChatOpen: boolean;
   setItems: (items: SavedItem[]) => void;
@@ -22,6 +23,7 @@ export interface EdenStore {
   setSelectedTags: (tags: string[]) => void;
   setIsCapturing: (capturing: boolean) => void;
   setIsBatchImporting: (importing: boolean) => void;
+  setIsFileUploading: (uploading: boolean) => void;
   setSelectedItem: (item: SavedItem | null) => void;
   setIsChatOpen: (open: boolean) => void;
   addItem: (item: SavedItem) => void;

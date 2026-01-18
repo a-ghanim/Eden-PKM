@@ -12,6 +12,7 @@ export function EdenProvider({ children }: { children: React.ReactNode }) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isBatchImporting, setIsBatchImporting] = useState(false);
+  const [isFileUploading, setIsFileUploading] = useState(false);
   const [selectedItem, setSelectedItem] = useState<SavedItem | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -83,6 +84,7 @@ export function EdenProvider({ children }: { children: React.ReactNode }) {
       selectedTags,
       isCapturing,
       isBatchImporting,
+      isFileUploading,
       selectedItem,
       isChatOpen,
       setItems,
@@ -94,6 +96,7 @@ export function EdenProvider({ children }: { children: React.ReactNode }) {
       setSelectedTags,
       setIsCapturing,
       setIsBatchImporting,
+      setIsFileUploading,
       setSelectedItem,
       setIsChatOpen,
       addItem,
@@ -110,6 +113,7 @@ export function EdenProvider({ children }: { children: React.ReactNode }) {
       selectedTags,
       isCapturing,
       isBatchImporting,
+      isFileUploading,
       selectedItem,
       isChatOpen,
       setItems,

@@ -12,6 +12,7 @@ import {
   Plus,
   Settings,
   Upload,
+  FileUp,
 } from "lucide-react";
 import {
   Sidebar,
@@ -44,7 +45,7 @@ const filterItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const { items, setIsCapturing, setIsBatchImporting, setIsChatOpen, selectedIntent, setSelectedIntent } = useEden();
+  const { items, setIsCapturing, setIsBatchImporting, setIsFileUploading, setIsChatOpen, selectedIntent, setSelectedIntent } = useEden();
 
   const unreadCount = items.filter((item) => !item.isRead).length;
 
@@ -68,15 +69,26 @@ export function AppSidebar() {
             <Plus className="w-4 h-4" />
             Capture
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => setIsBatchImporting(true)}
-            className="w-full justify-center gap-2 h-9 rounded-xl"
-            data-testid="button-batch-import"
-          >
-            <Upload className="w-4 h-4" />
-            Batch Import
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsBatchImporting(true)}
+              className="flex-1 justify-center gap-2 h-9 rounded-xl"
+              data-testid="button-batch-import"
+            >
+              <Upload className="w-4 h-4" />
+              URLs
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsFileUploading(true)}
+              className="flex-1 justify-center gap-2 h-9 rounded-xl"
+              data-testid="button-file-upload"
+            >
+              <FileUp className="w-4 h-4" />
+              Files
+            </Button>
+          </div>
         </div>
 
         <SidebarGroup className="mt-4">

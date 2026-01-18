@@ -2,8 +2,84 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Anthropic from "@anthropic-ai/sdk";
+import multer from "multer";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 import { insertSavedItemSchema, updateSavedItemSchema, chatRequestSchema, type InsertSavedItem, type SavedItem } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = [
+      "text/html",
+      "text/plain",
+      "text/markdown",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+    if (allowedTypes.includes(file.mimetype) || file.originalname.match(/\.(html|htm|txt|md|pdf|doc|docx)$/i)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Unsupported file type. Please upload HTML, PDF, TXT, MD, or DOC files."));
+    }
+  },
+});
+
+async function extractContentFromFile(buffer: Buffer, filename: string, mimetype: string): Promise<{ title: string; content: string }> {
+  const ext = filename.toLowerCase().split(".").pop() || "";
+  
+  if (mimetype === "application/pdf" || ext === "pdf") {
+    try {
+      const data = await pdfParse(buffer);
+      const title = filename.replace(/\.pdf$/i, "");
+      return {
+        title,
+        content: data.text.slice(0, 50000),
+      };
+    } catch (error) {
+      throw new Error("Failed to parse PDF file");
+    }
+  }
+  
+  if (mimetype === "text/html" || ext === "html" || ext === "htm") {
+    const htmlContent = buffer.toString("utf-8");
+    const titleMatch = htmlContent.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].trim() : filename.replace(/\.(html|htm)$/i, "");
+    const textContent = htmlContent
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return {
+      title,
+      content: textContent.slice(0, 50000),
+    };
+  }
+  
+  if (mimetype === "text/plain" || mimetype === "text/markdown" || ext === "txt" || ext === "md") {
+    const textContent = buffer.toString("utf-8");
+    const title = filename.replace(/\.(txt|md)$/i, "");
+    return {
+      title,
+      content: textContent.slice(0, 50000),
+    };
+  }
+  
+  if (mimetype.includes("msword") || mimetype.includes("wordprocessingml") || ext === "doc" || ext === "docx") {
+    const title = filename.replace(/\.(doc|docx)$/i, "");
+    return {
+      title,
+      content: `[Document content from ${filename}. Full extraction requires specialized processing.]`,
+    };
+  }
+  
+  throw new Error(`Unsupported file type: ${mimetype}`);
+}
 
 const anthropic = new Anthropic({
   apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
@@ -397,6 +473,93 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Batch import error:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : "Batch import failed" });
+    }
+  });
+
+  app.post("/api/items/upload", upload.array("files", 10), async (req: Request, res: Response) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      const intent = req.body.intent || "read_later";
+      
+      if (!files || files.length === 0) {
+        return res.status(400).json({ error: "No files uploaded" });
+      }
+
+      const validIntents = ["read_later", "reference", "inspiration", "tutorial"];
+      const safeIntent = validIntents.includes(intent) ? intent : "read_later";
+
+      const results: { fileName: string; success: boolean; item?: SavedItem; error?: string }[] = [];
+      const existingItems = await storage.getAllItems();
+
+      for (const file of files) {
+        try {
+          const extracted = await extractContentFromFile(file.buffer, file.originalname, file.mimetype);
+          const analysis = await analyzeContentWithAI(extracted.content, extracted.title);
+          
+          const connections = await findConnectionsWithAI(
+            { title: extracted.title, summary: analysis.summary, tags: analysis.tags, concepts: analysis.concepts },
+            existingItems.map((item) => ({
+              id: item.id,
+              title: item.title,
+              summary: item.summary,
+              tags: item.tags,
+              concepts: item.concepts,
+            }))
+          );
+
+          const fileUrl = `file://${encodeURIComponent(file.originalname)}`;
+          
+          const parseResult = insertSavedItemSchema.safeParse({ url: fileUrl, intent: safeIntent });
+          if (!parseResult.success) {
+            throw new Error(fromZodError(parseResult.error).message);
+          }
+
+          const enrichedData = {
+            title: extracted.title,
+            content: extracted.content,
+            summary: analysis.summary,
+            tags: analysis.tags,
+            concepts: analysis.concepts,
+            domain: "local",
+            favicon: undefined,
+            imageUrl: undefined,
+            expiresAt: null,
+          };
+
+          const newItem = await storage.createItem(parseResult.data, enrichedData);
+
+          if (connections.length > 0) {
+            await storage.updateItem(newItem.id, { connections });
+            for (const connId of connections) {
+              const connItem = await storage.getItem(connId);
+              if (connItem && !connItem.connections.includes(newItem.id)) {
+                await storage.updateItem(connId, {
+                  connections: [...connItem.connections, newItem.id],
+                });
+              }
+            }
+          }
+
+          const updatedItem = await storage.getItem(newItem.id);
+          results.push({ fileName: file.originalname, success: true, item: updatedItem! });
+        } catch (error) {
+          results.push({
+            fileName: file.originalname,
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to process file",
+          });
+        }
+      }
+
+      res.status(201).json({
+        total: files.length,
+        successful: results.filter((r) => r.success).length,
+        failed: results.filter((r) => !r.success).length,
+        results,
+      });
+    } catch (error) {
+      console.error("File upload error:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : "File upload failed" });
     }
   });
 

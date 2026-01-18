@@ -12,7 +12,14 @@ export type Highlight = z.infer<typeof highlightSchema>;
 
 export const savedItemSchema = z.object({
   id: z.string(),
-  url: z.string().url(),
+  url: z.string().refine((val) => {
+    try {
+      const url = new URL(val);
+      return ["http:", "https:", "file:"].includes(url.protocol);
+    } catch {
+      return false;
+    }
+  }, { message: "Invalid URL" }),
   title: z.string(),
   content: z.string(),
   summary: z.string(),
@@ -35,7 +42,14 @@ export const savedItemSchema = z.object({
 export type SavedItem = z.infer<typeof savedItemSchema>;
 
 export const insertSavedItemSchema = z.object({
-  url: z.string().url(),
+  url: z.string().refine((val) => {
+    try {
+      const url = new URL(val);
+      return ["http:", "https:", "file:"].includes(url.protocol);
+    } catch {
+      return false;
+    }
+  }, { message: "Invalid URL. Must be http, https, or file protocol." }),
   intent: z.enum(intentTypes),
 });
 

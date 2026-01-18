@@ -10,6 +10,7 @@ import { EdenProvider } from "@/components/EdenProvider";
 import { AppSidebar } from "@/components/AppSidebar";
 import { CaptureModal } from "@/components/CaptureModal";
 import { BatchImportModal } from "@/components/BatchImportModal";
+import { FileUploadModal } from "@/components/FileUploadModal";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ReaderMode } from "@/components/ReaderMode";
 import { useEden } from "@/lib/store";
@@ -34,7 +35,7 @@ function Router() {
 }
 
 function AppLayout() {
-  const { isBatchImporting, setIsBatchImporting } = useEden();
+  const { isBatchImporting, setIsBatchImporting, isFileUploading, setIsFileUploading } = useEden();
   const sidebarStyle = {
     "--sidebar-width": "14rem",
     "--sidebar-width-icon": "3rem",
@@ -56,6 +57,7 @@ function AppLayout() {
       </div>
       <CaptureModal />
       <BatchImportModal open={isBatchImporting} onOpenChange={setIsBatchImporting} />
+      <FileUploadModal open={isFileUploading} onOpenChange={setIsFileUploading} />
       <ChatInterface />
       <ReaderMode />
     </SidebarProvider>
