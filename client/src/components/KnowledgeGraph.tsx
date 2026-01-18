@@ -4,6 +4,7 @@ import { ExternalLink, Globe, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import * as d3 from "d3";
 import { useEden } from "@/lib/store";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/components/ThemeProvider";
 import type { SavedItem } from "@shared/schema";
 
 interface GraphNode extends d3.SimulationNodeDatum {
@@ -41,11 +42,22 @@ function getTagColor(tag: string): string {
 
 export function KnowledgeGraph() {
   const { items, setSelectedItem } = useEden();
+  const { theme } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<SavedItem | null>(null);
   const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
   const [transform, setTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
+  
+  // Theme-aware colors
+  const isDark = theme === "dark";
+  const colors = {
+    background: isDark ? "hsl(0, 0%, 3%)" : "hsl(40, 20%, 96%)",
+    gridDot: isDark ? "hsl(0, 0%, 15%)" : "hsl(40, 10%, 80%)",
+    linkStroke: isDark ? "hsl(0, 0%, 35%)" : "hsl(40, 10%, 70%)",
+    labelText: isDark ? "hsl(0, 0%, 60%)" : "hsl(40, 10%, 35%)",
+    hoverStroke: isDark ? "white" : "hsl(40, 10%, 20%)",
+  };
 
   const { nodes, links } = useMemo(() => {
     if (items.length === 0) return { nodes: [], links: [] };
@@ -121,8 +133,8 @@ export function KnowledgeGraph() {
       .selectAll("line")
       .data(links)
       .join("line")
-      .attr("stroke", "hsl(0, 0%, 35%)")
-      .attr("stroke-opacity", (d) => 0.2 + (d.strength as number) * 0.15)
+      .attr("stroke", colors.linkStroke)
+      .attr("stroke-opacity", (d) => 0.3 + (d.strength as number) * 0.15)
       .attr("stroke-width", (d) => 0.5 + (d.strength as number) * 0.5);
 
     const drag = d3.drag<SVGGElement, GraphNode>()
@@ -165,7 +177,7 @@ export function KnowledgeGraph() {
       .text((d) => d.item.title.length > 20 ? d.item.title.substring(0, 18) + "..." : d.item.title)
       .attr("text-anchor", "middle")
       .attr("dy", (d) => d.size + 14)
-      .attr("fill", "hsl(0, 0%, 60%)")
+      .attr("fill", colors.labelText)
       .attr("font-size", "10px")
       .attr("font-family", "Inter, sans-serif")
       .attr("pointer-events", "none");
@@ -176,7 +188,7 @@ export function KnowledgeGraph() {
           .transition()
           .duration(150)
           .attr("r", d.size * 1.3)
-          .attr("stroke", "white")
+          .attr("stroke", colors.hoverStroke)
           .attr("stroke-width", 2);
 
         link
@@ -188,7 +200,7 @@ export function KnowledgeGraph() {
           .attr("stroke", (l) => {
             const source = typeof l.source === "object" ? l.source.id : l.source;
             const target = typeof l.target === "object" ? l.target.id : l.target;
-            return source === d.id || target === d.id ? d.color : "hsl(0, 0%, 35%)";
+            return source === d.id || target === d.id ? d.color : colors.linkStroke;
           });
 
         setHoveredNode(d.item);
@@ -203,8 +215,8 @@ export function KnowledgeGraph() {
           .attr("stroke-width", 2);
 
         link
-          .attr("stroke-opacity", (l) => 0.2 + (l.strength as number) * 0.15)
-          .attr("stroke", "hsl(0, 0%, 35%)");
+          .attr("stroke-opacity", (l) => 0.3 + (l.strength as number) * 0.15)
+          .attr("stroke", colors.linkStroke);
 
         setHoveredNode(null);
       })
@@ -227,7 +239,7 @@ export function KnowledgeGraph() {
     return () => {
       simulation.stop();
     };
-  }, [nodes, links, setSelectedItem]);
+  }, [nodes, links, setSelectedItem, colors.linkStroke, colors.labelText, colors.hoverStroke]);
 
   const handleZoom = (direction: "in" | "out" | "reset") => {
     if (!svgRef.current) return;
@@ -313,12 +325,13 @@ export function KnowledgeGraph() {
 
       <div
         ref={containerRef}
-        className="relative h-[600px] rounded-2xl overflow-hidden bg-[hsl(0_0%_3%)] border border-border/20"
+        className="relative h-[600px] rounded-2xl overflow-hidden border border-border/20"
+        style={{ backgroundColor: colors.background }}
       >
         <div
           className="absolute inset-0 opacity-40"
           style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, hsl(0 0% 15%) 1px, transparent 0)`,
+            backgroundImage: `radial-gradient(circle at 1px 1px, ${colors.gridDot} 1px, transparent 0)`,
             backgroundSize: "20px 20px",
           }}
         />
@@ -400,7 +413,7 @@ export function KnowledgeGraph() {
             </div>
 
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground capitalize">{hoveredNode.intent.replace("_", " ")}</span>
+              <span className="text-muted-foreground">{hoveredNode.domain}</span>
               <div className="flex items-center gap-1 text-accent">
                 <ExternalLink className="w-3 h-3" />
                 <span>Click to view</span>
