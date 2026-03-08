@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Anthropic from "@anthropic-ai/sdk";
-import { setupAuth, registerAuthRoutes, isAuthenticated, authStorage } from "./replit_integrations/auth";
+import { setupAuth, isAuthenticated, authStorage } from "./auth";
 import multer from "multer";
 import pLimit from "p-limit";
 import { createRequire } from "module";
@@ -337,11 +337,10 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   await setupAuth(app);
-  registerAuthRoutes(app);
 
   app.get("/api/auth/token", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const token = await authStorage.getOrCreateApiToken(userId);
       res.json({ token });
     } catch (error) {
@@ -351,7 +350,7 @@ export async function registerRoutes(
 
   app.get("/api/items", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const items = await storage.getItemsByUser(userId);
       res.json(items);
     } catch (error) {
@@ -361,7 +360,7 @@ export async function registerRoutes(
 
   app.get("/api/items/:id", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const id = req.params.id as string;
       const item = await storage.getItem(id, userId);
       if (!item) {
@@ -469,7 +468,7 @@ export async function registerRoutes(
 
   app.post("/api/items/capture", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const parseResult = insertSavedItemSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res.status(400).json({ error: fromZodError(parseResult.error).message });
@@ -532,7 +531,7 @@ export async function registerRoutes(
 
   app.patch("/api/items/:id", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const id = req.params.id as string;
       const parseResult = updateSavedItemSchema.safeParse(req.body);
       if (!parseResult.success) {
@@ -551,7 +550,7 @@ export async function registerRoutes(
 
   app.delete("/api/items/:id", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const id = req.params.id as string;
       const deleted = await storage.deleteItem(id, userId);
       if (!deleted) {
@@ -565,7 +564,7 @@ export async function registerRoutes(
 
   app.get("/api/search", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const query = req.query.q as string;
       if (!query) {
         return res.status(400).json({ error: "Search query is required" });
@@ -664,7 +663,7 @@ Return ONLY the JSON array, no other text.`
   });
 
   app.post("/api/items/batch/stream", isAuthenticated, async (req: any, res: Response) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -776,7 +775,7 @@ Return ONLY the JSON array, no other text.`
 
   app.post("/api/items/batch", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const { urls } = req.body as { urls: string[] };
       
       if (!urls || !Array.isArray(urls) || urls.length === 0) {
@@ -866,7 +865,7 @@ Return ONLY the JSON array, no other text.`
   });
 
   app.post("/api/items/upload/stream", isAuthenticated, upload.array("files", 10), async (req: any, res: Response) => {
-    const userId = req.user.claims.sub;
+    const userId = req.user!.id;
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -1028,7 +1027,7 @@ Return ONLY the JSON array, no other text.`
 
   app.post("/api/items/upload", isAuthenticated, upload.array("files", 10), async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const files = req.files as Express.Multer.File[];
       
       if (!files || files.length === 0) {

@@ -54,7 +54,7 @@ export default function BookmarkletPage() {
             <p className="text-muted-foreground text-lg">
               You need to be signed in to use the bookmarklet
             </p>
-            <a href="/api/login" className="inline-block">
+            <a href="/" className="inline-block">
               <Button data-testid="button-sign-in">Sign In</Button>
             </a>
           </div>

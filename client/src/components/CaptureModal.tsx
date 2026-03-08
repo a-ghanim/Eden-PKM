@@ -14,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useEden } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { IntentType } from "@shared/schema";
+type IntentType = "read_later" | "reference" | "inspiration" | "tutorial";
 
 const intentOptions: { value: IntentType; label: string; icon: typeof BookOpen; description: string }[] = [
   { value: "read_later", label: "Read Later", icon: BookOpen, description: "Save to read when you have time" },

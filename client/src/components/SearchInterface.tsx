@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/popover";
 import { useEden } from "@/lib/store";
 import { SavedItemCard } from "./SavedItemCard";
-import type { IntentType } from "@shared/schema";
+type IntentType = "read_later" | "reference" | "inspiration" | "tutorial";
 
 const intentLabels: Record<IntentType, string> = {
   read_later: "Read Later",
@@ -46,7 +46,9 @@ export function SearchInterface() {
     }
 
     if (selectedIntent) {
-      filtered = filtered.filter((item) => item.intent === selectedIntent);
+      filtered = filtered.filter((item) =>
+        item.tags.some((tag) => tag.toLowerCase().includes(selectedIntent))
+      );
     }
 
     if (selectedTags.length > 0) {

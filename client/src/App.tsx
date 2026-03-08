@@ -23,7 +23,9 @@ import GraphPage from "@/pages/graph";
 import SettingsPage from "@/pages/settings";
 import BookmarkletPage from "@/pages/bookmarklet";
 import LandingPage from "@/pages/landing";
+import AuthPage from "@/pages/auth";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 function AppRouter() {
   return (
@@ -70,7 +72,8 @@ function AppLayout() {
 }
 
 function AuthenticatedApp() {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
 
   if (isLoading) {
     return (
@@ -81,7 +84,10 @@ function AuthenticatedApp() {
   }
 
   if (!isAuthenticated) {
-    return <LandingPage />;
+    if (showAuth) {
+      return <AuthPage onBack={() => setShowAuth(false)} />;
+    }
+    return <LandingPage onSignIn={() => setShowAuth(true)} />;
   }
 
   return <AppLayout />;
@@ -90,7 +96,7 @@ function AuthenticatedApp() {
 function MainRouter() {
   return (
     <Switch>
-      <Route path="/landing" component={LandingPage} />
+      <Route path="/landing">{() => <LandingPage />}</Route>
       <Route>
         <AuthenticatedApp />
       </Route>
