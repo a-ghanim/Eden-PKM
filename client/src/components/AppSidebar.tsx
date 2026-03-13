@@ -51,7 +51,7 @@ const filterItems = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { items, setIsCapturing, setIsBatchImporting, setIsFileUploading, setIsChatOpen, selectedIntent, setSelectedIntent } = useEden();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const unreadCount = items.filter((item) => !item.isRead).length;
 
@@ -190,11 +190,13 @@ export function AppSidebar() {
             <span>Settings</span>
           </Link>
         </SidebarMenuButton>
-        <SidebarMenuButton asChild className="rounded-xl">
-          <a href="/api/logout" data-testid="button-logout">
-            <LogOut className="w-4 h-4" />
-            <span>Log out</span>
-          </a>
+        <SidebarMenuButton
+          onClick={() => logout()}
+          className="rounded-xl"
+          data-testid="button-logout"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Log out</span>
         </SidebarMenuButton>
       </SidebarFooter>
 

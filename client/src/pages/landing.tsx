@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Network, Brain, Zap, Layers, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroImage from "@assets/blade-lustre-RLUrtznJ4EU-unsplash_1768744151563.jpg";
+import heroImage from "@/assets/hero.jpg";
 import {
   CaptureIllustration,
   AIAnalysisIllustration,
@@ -11,18 +11,11 @@ import {
   KnowledgeGraphIllustration,
 } from "@/components/bento-illustrations";
 
-/**
- * Midjourney Prompt for Hero Image:
- * 
- * "Abstract retro artistic landscape, dreamy surreal digital painting,
- * warm earth tones with deep teals and burnt oranges, floating geometric shapes,
- * soft gradients, organic flowing forms, vintage 1970s poster aesthetic,
- * grain texture overlay, muted sage green accents, ethereal atmosphere,
- * painterly brushstrokes, minimalist composition, high resolution, 16:9 aspect ratio
- * --ar 16:9 --v 6 --style raw --s 250"
- */
+interface LandingPageProps {
+  onSignIn?: () => void;
+}
 
-export default function LandingPage() {
+export default function LandingPage({ onSignIn }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section - Full Page with Retro Art */}
@@ -90,16 +83,15 @@ export default function LandingPage() {
               className="flex flex-col sm:flex-row gap-4"
               data-testid="container-hero-ctas"
             >
-              <a href="/api/login" data-testid="link-get-started">
-                <Button 
-                  size="lg" 
-                  className="h-14 px-8 text-lg rounded-full gradient-fill-button text-black font-medium gap-2"
-                  data-testid="button-get-started"
-                >
-                  Sign In
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </a>
+              <Button
+                size="lg"
+                onClick={onSignIn}
+                className="h-14 px-8 text-lg rounded-full gradient-fill-button text-black font-medium gap-2"
+                data-testid="button-get-started"
+              >
+                Get Started
+                <ArrowRight className="w-5 h-5" />
+              </Button>
               <Button 
                 variant="ghost" 
                 size="lg" 
